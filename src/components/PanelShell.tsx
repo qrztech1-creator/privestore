@@ -30,6 +30,7 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken }: 
     { to: "/admin", label: "Dashboard", icon: BarChart3 },
     { to: "/admin/eventos", label: "Noivas", icon: Heart },
     { to: "/admin/produtos", label: "Catálogo", icon: Package },
+    { to: "/admin/categorias", label: "Categorias", icon: Tag },
     { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
     { to: "/admin/usuarios", label: "Equipe", icon: LayoutDashboard },
   ];
