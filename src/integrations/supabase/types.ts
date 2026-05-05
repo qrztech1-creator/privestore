@@ -14,16 +14,346 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      event_invites: {
+        Row: {
+          created_at: string
+          event_id: string
+          guest_label: string | null
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          guest_label?: string | null
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          guest_label?: string | null
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_invites_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_products: {
+        Row: {
+          desired_qty: number
+          event_id: string
+          id: string
+          is_favorite: boolean
+          position: number
+          product_id: string
+          purchased_qty: number
+        }
+        Insert: {
+          desired_qty?: number
+          event_id: string
+          id?: string
+          is_favorite?: boolean
+          position?: number
+          product_id: string
+          purchased_qty?: number
+        }
+        Update: {
+          desired_qty?: number
+          event_id?: string
+          id?: string
+          is_favorite?: boolean
+          position?: number
+          product_id?: string
+          purchased_qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_products_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          banner_url: string | null
+          bride_name: string
+          created_at: string
+          event_date: string | null
+          id: string
+          message: string | null
+          owner_id: string | null
+          palette: Json
+          partner_name: string | null
+          playlist_url: string | null
+          secret_code: string | null
+          slug: string
+          status: Database["public"]["Enums"]["event_status"]
+          type: Database["public"]["Enums"]["event_type"]
+          updated_at: string
+          visibility: Database["public"]["Enums"]["event_visibility"]
+          whatsapp_number: string | null
+        }
+        Insert: {
+          banner_url?: string | null
+          bride_name: string
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          message?: string | null
+          owner_id?: string | null
+          palette?: Json
+          partner_name?: string | null
+          playlist_url?: string | null
+          secret_code?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["event_status"]
+          type: Database["public"]["Enums"]["event_type"]
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["event_visibility"]
+          whatsapp_number?: string | null
+        }
+        Update: {
+          banner_url?: string | null
+          bride_name?: string
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          message?: string | null
+          owner_id?: string | null
+          palette?: Json
+          partner_name?: string | null
+          playlist_url?: string | null
+          secret_code?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          type?: Database["public"]["Enums"]["event_type"]
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["event_visibility"]
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          event_product_id: string | null
+          id: string
+          order_id: string
+          product_id: string | null
+          product_name: string
+          qty: number
+          unit_price: number
+        }
+        Insert: {
+          event_product_id?: string | null
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          qty?: number
+          unit_price?: number
+        }
+        Update: {
+          event_product_id?: string | null
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          qty?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_event_product_id_fkey"
+            columns: ["event_product_id"]
+            isOneToOne: false
+            referencedRelation: "event_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          event_id: string
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          message: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          guest_email?: string | null
+          guest_name: string
+          guest_phone?: string | null
+          id?: string
+          message?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          guest_email?: string | null
+          guest_name?: string
+          guest_phone?: string | null
+          id?: string
+          message?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price?: number
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "bride" | "guest"
+      event_status: "active" | "paused" | "closed"
+      event_type: "casamento" | "cha_lingerie" | "despedida_solteira"
+      event_visibility: "public" | "private" | "secret"
+      order_status: "pending" | "paid" | "shipped" | "delivered" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +480,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "bride", "guest"],
+      event_status: ["active", "paused", "closed"],
+      event_type: ["casamento", "cha_lingerie", "despedida_solteira"],
+      event_visibility: ["public", "private", "secret"],
+      order_status: ["pending", "paid", "shipped", "delivered", "cancelled"],
+    },
   },
 } as const
