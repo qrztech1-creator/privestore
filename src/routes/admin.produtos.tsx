@@ -36,8 +36,6 @@ function AdminProducts() {
   }
   useEffect(() => { load(); }, []);
 
-  if (!loading && !isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
-
   async function remove(id: string) {
     if (!confirm("Excluir produto?")) return;
     await supabase.from("products").delete().eq("id", id); load();
@@ -65,6 +63,9 @@ function AdminProducts() {
     if (sort === "name") out = [...out].sort((a, b) => a.name.localeCompare(b.name));
     return out;
   }, [items, q, catId, statusF, sort]);
+
+  if (!loading && !isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
+
 
   return (
     <PanelShell mode="admin">
