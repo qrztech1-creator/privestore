@@ -36,8 +36,6 @@ function AdminProducts() {
   }
   useEffect(() => { load(); }, []);
 
-  if (!loading && !isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
-
   async function remove(id: string) {
     if (!confirm("Excluir produto?")) return;
     await supabase.from("products").delete().eq("id", id); load();
