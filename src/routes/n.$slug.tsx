@@ -192,7 +192,7 @@ function CartDialog({ open, onOpenChange, event }: any) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function checkout(viaWa: boolean) {
+  async function checkout(mode: "wa" | "register" | "card") {
     if (items.length === 0) return;
     if (!name) return toast.error("Informe seu nome");
     setBusy(true);
@@ -205,9 +205,21 @@ function CartDialog({ open, onOpenChange, event }: any) {
       order_id: order.id, event_product_id: i.eventProductId, product_id: i.productId,
       product_name: i.name, qty: i.qty, unit_price: i.price,
     })));
+
+    if (mode === "card") {
+      const { data, error: fnErr } = await supabase.functions.invoke("create-checkout", {
+        body: { order_id: order.id, success_url: window.location.href + "?paid=1", cancel_url: window.location.href },
+      });
+      setBusy(false);
+      if (fnErr || !data?.url) return toast.error(fnErr?.message || "Falha ao iniciar pagamento");
+      cart.clear(event.id);
+      window.location.href = data.url;
+      return;
+    }
+
     cart.clear(event.id);
     setBusy(false);
-    if (viaWa && event.whatsapp_number) {
+    if (mode === "wa" && event.whatsapp_number) {
       const text = `Oi! Acabei de fazer um pedido para ${event.bride_name}:\n\n${items.map(i => `• ${i.qty}x ${i.name}`).join("\n")}\n\nTotal: R$ ${total.toFixed(2)}\nMeu nome: ${name}`;
       window.open(`https://wa.me/${event.whatsapp_number.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`, "_blank");
     }
