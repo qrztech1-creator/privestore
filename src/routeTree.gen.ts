@@ -13,7 +13,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as PainelSlugRouteImport } from './routes/painel.$slug'
 import { Route as NSlugRouteImport } from './routes/n.$slug'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
@@ -38,11 +37,6 @@ const PainelIndexRoute = PainelIndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PainelSlugRoute = PainelSlugRouteImport.update({
-  id: '/painel/$slug',
-  path: '/painel/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NSlugRoute = NSlugRouteImport.update({
@@ -79,7 +73,6 @@ export interface FileRoutesByFullPath {
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/n/$slug': typeof NSlugRoute
-  '/painel/$slug': typeof PainelSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
 }
@@ -91,7 +84,6 @@ export interface FileRoutesByTo {
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/n/$slug': typeof NSlugRoute
-  '/painel/$slug': typeof PainelSlugRoute
   '/admin': typeof AdminIndexRoute
   '/painel': typeof PainelIndexRoute
 }
@@ -104,7 +96,6 @@ export interface FileRoutesById {
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/n/$slug': typeof NSlugRoute
-  '/painel/$slug': typeof PainelSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
 }
@@ -118,7 +109,6 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/usuarios'
     | '/n/$slug'
-    | '/painel/$slug'
     | '/admin/'
     | '/painel/'
   fileRoutesByTo: FileRoutesByTo
@@ -130,7 +120,6 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/usuarios'
     | '/n/$slug'
-    | '/painel/$slug'
     | '/admin'
     | '/painel'
   id:
@@ -142,7 +131,6 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/usuarios'
     | '/n/$slug'
-    | '/painel/$slug'
     | '/admin/'
     | '/painel/'
   fileRoutesById: FileRoutesById
@@ -155,7 +143,6 @@ export interface RootRouteChildren {
   AdminProdutosRoute: typeof AdminProdutosRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   NSlugRoute: typeof NSlugRoute
-  PainelSlugRoute: typeof PainelSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PainelIndexRoute: typeof PainelIndexRoute
 }
@@ -188,13 +175,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/painel/$slug': {
-      id: '/painel/$slug'
-      path: '/painel/$slug'
-      fullPath: '/painel/$slug'
-      preLoaderRoute: typeof PainelSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/n/$slug': {
@@ -243,7 +223,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProdutosRoute: AdminProdutosRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   NSlugRoute: NSlugRoute,
-  PainelSlugRoute: PainelSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   PainelIndexRoute: PainelIndexRoute,
 }
