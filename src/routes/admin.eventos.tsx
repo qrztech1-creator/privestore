@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ExternalLink, Search } from "lucide-react";
+import { Plus, ExternalLink, Search, Copy, Heart } from "lucide-react";
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { toast } from "sonner";
 
