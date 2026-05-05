@@ -58,7 +58,7 @@ export function ImageInput({ value, onChange, prompt, label = "Imagem", folder =
       <Label>{label}</Label>
       {value ? (
         <div className="relative rounded-xl overflow-hidden border border-border group">
-          <img src={value} alt="" className="w-full h-48 object-cover" />
+          <img src={value} alt="" loading="lazy" className="w-full h-48 object-cover" />
           <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition" onClick={() => onChange(null)}>
             <X className="w-4 h-4" />
           </Button>
