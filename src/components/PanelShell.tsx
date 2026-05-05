@@ -76,7 +76,7 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken }: 
           )}
         </div>
       </aside>
-      <main className="flex-1 min-w-0">{children}</main>
+      <main key={path} className="flex-1 min-w-0 animate-fade-in">{children}</main>
     </div>
   );
 }
