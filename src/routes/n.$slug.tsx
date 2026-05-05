@@ -254,9 +254,10 @@ function CartDialog({ open, onOpenChange, event }: any) {
               <Input placeholder="E-mail (opcional)" value={email} onChange={(e) => setEmail(e.target.value)} />
               <Textarea placeholder="Mensagem para a noiva (opcional)" value={msg} onChange={(e) => setMsg(e.target.value)} rows={2} />
             </div>
-            <div className="flex gap-2 mt-4">
-              {event.whatsapp_number && <Button onClick={() => checkout(true)} disabled={busy} className="flex-1 bg-[#25D366] hover:bg-[#1faa55] text-white"><MessageCircle className="w-4 h-4 mr-1" />Finalizar no WhatsApp</Button>}
-              <Button onClick={() => checkout(false)} disabled={busy} variant="outline" className="flex-1">Apenas registrar</Button>
+            <div className="flex flex-col gap-2 mt-4">
+              <Button onClick={() => checkout("card")} disabled={busy} className="w-full bg-primary text-primary-foreground">💳 Pagar com cartão</Button>
+              {event.whatsapp_number && <Button onClick={() => checkout("wa")} disabled={busy} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white"><MessageCircle className="w-4 h-4 mr-1" />Combinar pelo WhatsApp</Button>}
+              <Button onClick={() => checkout("register")} disabled={busy} variant="outline" className="w-full">Apenas registrar presente</Button>
             </div>
           </>
         )}
