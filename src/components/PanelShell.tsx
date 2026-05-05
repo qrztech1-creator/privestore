@@ -1,23 +1,42 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type ReactNode, type ComponentType } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3, Tag } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3, Tag, Users } from "lucide-react";
+
+export interface NavItem {
+  to: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  params?: Record<string, string>;
+  exact?: boolean;
+}
 
 interface Props {
   children: ReactNode;
-  mode?: "admin" | "bride-token";
+  mode?: "admin" | "bride-token" | "custom";
   brideName?: string;
   brideToken?: string;
+  navItems?: NavItem[];
+  title?: string;
+  showAuth?: boolean;
 }
 
-export function PanelShell({ children, mode = "admin", brideName, brideToken }: Props) {
+const adminNav: NavItem[] = [
+  { to: "/admin", label: "Dashboard", icon: BarChart3, exact: true },
+  { to: "/admin/eventos", label: "Eventos", icon: Users },
+  { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
+  { to: "/admin/produtos", label: "Produtos", icon: Package },
+  { to: "/admin/categorias", label: "Categorias", icon: Tag },
+  { to: "/admin/usuarios", label: "Equipe", icon: LayoutDashboard },
+];
+
+export function PanelShell({ children, mode = "admin", brideName, brideToken, navItems, title }: Props) {
   const { user, isAdmin, signOut, loading } = useAuth();
   const nav = useNavigate();
   const path = useRouterState({ select: (r) => r.location.pathname });
 
-  // Admin mode requires login
   useEffect(() => {
     if (mode === "admin" && !loading && (!user || !isAdmin)) nav({ to: "/login" });
   }, [loading, user, isAdmin, mode, nav]);
@@ -26,51 +45,47 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken }: 
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   }
 
-  const adminNav = [
-    { to: "/admin", label: "Dashboard", icon: BarChart3 },
-    { to: "/admin/eventos", label: "Noivas", icon: Heart },
-    { to: "/admin/produtos", label: "Catálogo", icon: Package },
-    { to: "/admin/categorias", label: "Categorias", icon: Tag },
-    { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
-    { to: "/admin/usuarios", label: "Equipe", icon: LayoutDashboard },
-  ];
+  const items: NavItem[] = navItems ?? (mode === "admin" ? adminNav : []);
+  const headerTitle = title ?? (mode === "admin" ? "Administração" : mode === "bride-token" ? "Área da Noiva" : "");
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-background">
       <aside className="w-64 bg-sidebar border-r border-sidebar-border hidden md:flex flex-col">
-        <div className="p-5 border-b border-sidebar-border">
-          <Link to={mode === "admin" ? "/admin" : "/g/$token"} params={mode === "admin" ? undefined : { token: brideToken! }}>
-            <Logo className="h-10" />
-          </Link>
-          <div className="mt-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-            {mode === "admin" ? "administração" : "área da noiva"}
-          </div>
-          {mode === "bride-token" && brideName && (
-            <div className="mt-2 text-sm font-display text-primary">{brideName}</div>
-          )}
+        <div className="p-5 flex items-center gap-3">
+          <Logo className="h-9 w-9 rounded-full" />
+          <div className="font-display text-lg leading-tight text-sidebar-foreground">{headerTitle}</div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
-          {mode === "admin" ? adminNav.map((it) => {
-            const active = path === it.to || (it.to !== "/admin" && path.startsWith(it.to));
+          {items.map((it) => {
+            const active = it.exact ? path === it.to : (path === it.to || path.startsWith(it.to + "/") || (it.to !== "/admin" && path.startsWith(it.to)));
+            const Icon = it.icon;
             return (
-              <Link key={it.to} to={it.to} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${active ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50"}`}>
-                <it.icon className="w-4 h-4" />{it.label}
+              <Link
+                key={it.to}
+                to={it.to}
+                params={it.params as never}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition ${
+                  active
+                    ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {it.label}
               </Link>
             );
-          }) : (
-            <div className="px-3 py-2 text-xs text-muted-foreground">
-              Use as abas no topo para navegar entre as seções da sua página.
-            </div>
+          })}
+          {brideName && mode === "bride-token" && (
+            <div className="mt-6 px-3 py-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{brideName}</div>
           )}
         </nav>
         <div className="p-3 border-t border-sidebar-border">
           {mode === "admin" ? (
-            <>
-              <div className="text-xs text-muted-foreground px-2 pb-2 truncate">{user?.email}</div>
-              <Button variant="ghost" size="sm" className="w-full justify-start" onClick={async () => { await signOut(); nav({ to: "/" }); }}>
-                <LogOut className="w-4 h-4 mr-2" />Sair
-              </Button>
-            </>
+            <Button variant="ghost" size="sm" className="w-full justify-start" onClick={async () => { await signOut(); nav({ to: "/" }); }}>
+              <LogOut className="w-4 h-4 mr-2" />Sair
+            </Button>
+          ) : brideToken ? (
+            <Link to="/g/$token" params={{ token: brideToken }} className="text-[11px] text-muted-foreground hover:text-primary px-2">Plataforma Privê</Link>
           ) : (
             <div className="text-[10px] text-muted-foreground px-2">Plataforma Privê</div>
           )}
