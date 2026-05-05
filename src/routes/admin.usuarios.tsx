@@ -25,14 +25,39 @@ export const Route = createFileRoute("/admin/usuarios")({
       else await supabase.from("user_roles").insert({ user_id: uid, role: "admin" });
       toast.success("Atualizado"); load();
     }
+    const filtered = useMemo(() => {
+      const term = q.toLowerCase();
+      return users.filter((u: any) => {
+        const roles = u.roles?.map((r: any) => r.role) || [];
+        const isA = roles.includes("admin");
+        if (filter === "admin" && !isA) return false;
+        if (filter === "user" && isA) return false;
+        if (!term) return true;
+        return (u.full_name || "").toLowerCase().includes(term) || (u.email || "").toLowerCase().includes(term);
+      });
+    }, [users, q, filter]);
     if (!isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
     return (
       <PanelShell mode="admin">
         <div className="p-6 md:p-10 max-w-6xl mx-auto">
           <h1 className="font-display text-4xl mb-2">Equipe</h1>
           <p className="text-sm text-muted-foreground mb-6">Contas com acesso administrativo. Noivas não têm conta — usam links exclusivos.</p>
+          <div className="flex flex-col md:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" placeholder="Buscar por nome ou e-mail..." value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+              <SelectTrigger className="md:w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as contas</SelectItem>
+                <SelectItem value="admin">Apenas admins</SelectItem>
+                <SelectItem value="user">Sem privilégios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
-            {users.map((u: any) => {
+            {filtered.map((u: any) => {
               const roles = u.roles?.map((r: any) => r.role) || [];
               const isA = roles.includes("admin");
               return (
@@ -45,6 +70,7 @@ export const Route = createFileRoute("/admin/usuarios")({
                 </div>
               );
             })}
+            {filtered.length === 0 && <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm">Nenhuma conta encontrada.</div>}
           </div>
         </div>
       </PanelShell>
