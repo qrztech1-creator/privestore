@@ -224,7 +224,7 @@ function WishlistTab({ items, products, ops }: any) {
 
 function OrdersTab({ orders, canEdit, reload }: any) {
   async function markDelivered(id: string) {
-    await supabase.from("orders").update({ delivered_at: new Date().toISOString(), status: "fulfilled" }).eq("id", id);
+    await supabase.from("orders").update({ delivered_at: new Date().toISOString(), status: "delivered" }).eq("id", id);
     toast.success("Marcado como entregue");
     reload();
   }
