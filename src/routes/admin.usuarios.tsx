@@ -1,15 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PanelShell } from "@/components/PanelShell";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/usuarios")({
   component: () => {
     const { isAdmin } = useAuth();
     const [users, setUsers] = useState<any[]>([]);
+    const [q, setQ] = useState("");
+    const [filter, setFilter] = useState<"all" | "admin" | "user">("all");
     async function load() {
       const { data } = await supabase.from("profiles").select("*, roles:user_roles(role)").order("created_at", { ascending: false });
       setUsers(data || []);
