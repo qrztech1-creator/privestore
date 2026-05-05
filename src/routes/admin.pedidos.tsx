@@ -39,7 +39,7 @@ function AdminOrders() {
 
   async function setOrderStatus(id: string, st: string) {
     const patch: any = { status: st };
-    if (st === "fulfilled") patch.delivered_at = new Date().toISOString();
+    if (st === "delivered") patch.delivered_at = new Date().toISOString();
     if (st === "paid") patch.paid_at = new Date().toISOString();
     await supabase.from("orders").update(patch).eq("id", id);
     toast.success("Atualizado"); load();
@@ -85,7 +85,7 @@ function AdminOrders() {
               <SelectItem value="all">Todos status</SelectItem>
               <SelectItem value="pending">Pendente</SelectItem>
               <SelectItem value="paid">Pago</SelectItem>
-              <SelectItem value="fulfilled">Entregue</SelectItem>
+              <SelectItem value="delivered">Entregue</SelectItem>
               <SelectItem value="cancelled">Cancelado</SelectItem>
             </SelectContent>
           </Select>
@@ -112,7 +112,7 @@ function AdminOrders() {
                   </div>
                   <div className="text-right">
                     <div className="text-primary font-display text-lg">R$ {Number(o.total).toFixed(2)}</div>
-                    <div className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full inline-block ${o.status === "paid" ? "bg-emerald-500/20 text-emerald-300" : o.status === "fulfilled" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{o.status}</div>
+                    <div className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full inline-block ${o.status === "paid" ? "bg-emerald-500/20 text-emerald-300" : o.status === "delivered" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{o.status}</div>
                   </div>
                   {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
@@ -122,7 +122,7 @@ function AdminOrders() {
                     <ul className="text-sm space-y-1">{o.items?.map((i: any) => <li key={i.id}>· {i.qty}× {i.product_name} — R$ {Number(i.unit_price).toFixed(2)}</li>)}</ul>
                     <div className="flex flex-wrap gap-2">
                       {o.status !== "paid" && <Button size="sm" variant="outline" onClick={() => setOrderStatus(o.id, "paid")}>Marcar pago</Button>}
-                      {o.status !== "fulfilled" && <Button size="sm" variant="outline" onClick={() => setOrderStatus(o.id, "fulfilled")}>Marcar entregue</Button>}
+                      {o.status !== "delivered" && <Button size="sm" variant="outline" onClick={() => setOrderStatus(o.id, "delivered")}>Marcar entregue</Button>}
                       {o.status !== "cancelled" && <Button size="sm" variant="ghost" onClick={() => setOrderStatus(o.id, "cancelled")}>Cancelar</Button>}
                     </div>
                   </div>
