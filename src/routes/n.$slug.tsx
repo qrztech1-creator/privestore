@@ -16,12 +16,20 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
-  validateSearch: (s: Record<string, unknown>) => ({ t: (s.t as string) || undefined }),
+  validateSearch: (s: Record<string, unknown>) => ({ t: (s.t as string) || undefined, paid: (s.paid as string) || undefined }),
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.slug} · Lista de presentes · Privê` },
+      { name: "description", content: "Presenteie com carinho. Lista de presentes exclusiva no Privê." },
+      { property: "og:title", content: `Lista de presentes · Privê` },
+      { property: "og:description", content: "Presenteie com carinho." },
+    ],
+  }),
 });
 
 function PublicBride() {
   const { slug } = useParams({ from: "/n/$slug" });
-  const { t: token } = useSearch({ from: "/n/$slug" });
+  const { t: token, paid } = useSearch({ from: "/n/$slug" });
   const { user, isAdmin } = useAuth();
   const [event, setEvent] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
