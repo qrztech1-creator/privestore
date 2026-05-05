@@ -98,9 +98,12 @@ export type Database = {
         Row: {
           banner_url: string | null
           bride_name: string
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           event_date: string | null
           id: string
+          manage_token: string | null
           message: string | null
           owner_id: string | null
           palette: Json
@@ -109,6 +112,7 @@ export type Database = {
           secret_code: string | null
           slug: string
           status: Database["public"]["Enums"]["event_status"]
+          thank_you_message: string | null
           type: Database["public"]["Enums"]["event_type"]
           updated_at: string
           visibility: Database["public"]["Enums"]["event_visibility"]
@@ -117,9 +121,12 @@ export type Database = {
         Insert: {
           banner_url?: string | null
           bride_name: string
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           event_date?: string | null
           id?: string
+          manage_token?: string | null
           message?: string | null
           owner_id?: string | null
           palette?: Json
@@ -128,6 +135,7 @@ export type Database = {
           secret_code?: string | null
           slug: string
           status?: Database["public"]["Enums"]["event_status"]
+          thank_you_message?: string | null
           type: Database["public"]["Enums"]["event_type"]
           updated_at?: string
           visibility?: Database["public"]["Enums"]["event_visibility"]
@@ -136,9 +144,12 @@ export type Database = {
         Update: {
           banner_url?: string | null
           bride_name?: string
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           event_date?: string | null
           id?: string
+          manage_token?: string | null
           message?: string | null
           owner_id?: string | null
           palette?: Json
@@ -147,6 +158,7 @@ export type Database = {
           secret_code?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["event_status"]
+          thank_you_message?: string | null
           type?: Database["public"]["Enums"]["event_type"]
           updated_at?: string
           visibility?: Database["public"]["Enums"]["event_visibility"]
@@ -209,35 +221,44 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          delivered_at: string | null
           event_id: string
           guest_email: string | null
           guest_name: string
           guest_phone: string | null
           id: string
           message: string | null
+          paid_at: string | null
           status: Database["public"]["Enums"]["order_status"]
+          stripe_session_id: string | null
           total: number
         }
         Insert: {
           created_at?: string
+          delivered_at?: string | null
           event_id: string
           guest_email?: string | null
           guest_name: string
           guest_phone?: string | null
           id?: string
           message?: string | null
+          paid_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_session_id?: string | null
           total?: number
         }
         Update: {
           created_at?: string
+          delivered_at?: string | null
           event_id?: string
           guest_email?: string | null
           guest_name?: string
           guest_phone?: string | null
           id?: string
           message?: string | null
+          paid_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stripe_session_id?: string | null
           total?: number
         }
         Relationships: [
@@ -339,6 +360,62 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      event_for_token: { Args: { _token: string }; Returns: string }
+      get_event_by_token: {
+        Args: { _token: string }
+        Returns: {
+          banner_url: string | null
+          bride_name: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          event_date: string | null
+          id: string
+          manage_token: string | null
+          message: string | null
+          owner_id: string | null
+          palette: Json
+          partner_name: string | null
+          playlist_url: string | null
+          secret_code: string | null
+          slug: string
+          status: Database["public"]["Enums"]["event_status"]
+          thank_you_message: string | null
+          type: Database["public"]["Enums"]["event_type"]
+          updated_at: string
+          visibility: Database["public"]["Enums"]["event_visibility"]
+          whatsapp_number: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_orders_by_token: {
+        Args: { _token: string }
+        Returns: {
+          created_at: string
+          delivered_at: string | null
+          event_id: string
+          guest_email: string | null
+          guest_name: string
+          guest_phone: string | null
+          id: string
+          message: string | null
+          paid_at: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          stripe_session_id: string | null
+          total: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -347,6 +424,66 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      remove_event_product_by_token: {
+        Args: { _ep_id: string; _token: string }
+        Returns: undefined
+      }
+      update_event_by_token: {
+        Args: { _patch: Json; _token: string }
+        Returns: {
+          banner_url: string | null
+          bride_name: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          event_date: string | null
+          id: string
+          manage_token: string | null
+          message: string | null
+          owner_id: string | null
+          palette: Json
+          partner_name: string | null
+          playlist_url: string | null
+          secret_code: string | null
+          slug: string
+          status: Database["public"]["Enums"]["event_status"]
+          thank_you_message: string | null
+          type: Database["public"]["Enums"]["event_type"]
+          updated_at: string
+          visibility: Database["public"]["Enums"]["event_visibility"]
+          whatsapp_number: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_event_product_by_token: {
+        Args: {
+          _desired_qty: number
+          _is_favorite: boolean
+          _position: number
+          _product_id: string
+          _token: string
+        }
+        Returns: {
+          desired_qty: number
+          event_id: string
+          id: string
+          is_favorite: boolean
+          position: number
+          product_id: string
+          purchased_qty: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "event_products"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "bride" | "guest"
