@@ -73,12 +73,10 @@ export function ImportPdfDialog({ open, onClose }: { open: boolean; onClose: () 
       const urls = await renderPdfPages(file);
       setPageImages(urls);
 
-      // 2) send PDF to AI (chunked base64) for product data
+      // 2) send page image URLs to AI for product data
       setProgress("Extraindo produtos com IA...");
-      const buf = await file.arrayBuffer();
-      const b64 = arrayBufferToBase64(buf);
       const { data, error } = await supabase.functions.invoke("import-products-pdf", {
-        body: { pdf_base64: b64, filename: file.name, page_count: urls.length },
+        body: { page_image_urls: urls, filename: file.name },
       });
       if (error) throw error;
       const products = (data?.products || []) as Extracted[];
