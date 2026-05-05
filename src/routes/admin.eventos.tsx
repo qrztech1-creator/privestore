@@ -9,7 +9,7 @@ import { Plus, Settings, ExternalLink, Copy, Search, Link2 } from "lucide-react"
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/eventos/")({ component: AdminEvents });
+export const Route = createFileRoute("/admin/eventos")({ component: AdminEvents });
 
 function AdminEvents() {
   const { isAdmin, loading } = useAuth();
