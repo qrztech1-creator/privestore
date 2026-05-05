@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
                         price: { type: "number" },
                         category: { type: "string" },
                         description: { type: "string" },
+                        page: { type: "integer", description: "Número da página (1-based) onde o produto aparece" },
                       },
                       required: ["name", "price"],
                     },
