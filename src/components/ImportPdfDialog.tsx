@@ -148,7 +148,7 @@ export function ImportPdfDialog({ open, onClose }: { open: boolean; onClose: () 
                 {items.map((p, i) => (
                   <div key={i} className="flex items-center gap-3 border-b border-border/40 pb-2">
                     {p.image_url ? (
-                      <img src={p.image_url} alt="" className="w-12 h-12 object-cover rounded-md" />
+                      <img src={p.image_url} alt="" loading="lazy" className="w-12 h-12 object-cover rounded-md" />
                     ) : (
                       <div className="w-12 h-12 rounded-md bg-secondary flex items-center justify-center"><ImageIcon className="w-4 h-4 opacity-50" /></div>
                     )}

@@ -16,12 +16,20 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
-  validateSearch: (s: Record<string, unknown>) => ({ t: (s.t as string) || undefined }),
+  validateSearch: (s: Record<string, unknown>) => ({ t: (s.t as string) || undefined, paid: (s.paid as string) || undefined }),
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.slug} · Lista de presentes · Privê` },
+      { name: "description", content: "Presenteie com carinho. Lista de presentes exclusiva no Privê." },
+      { property: "og:title", content: `Lista de presentes · Privê` },
+      { property: "og:description", content: "Presenteie com carinho." },
+    ],
+  }),
 });
 
 function PublicBride() {
   const { slug } = useParams({ from: "/n/$slug" });
-  const { t: token } = useSearch({ from: "/n/$slug" });
+  const { t: token, paid } = useSearch({ from: "/n/$slug" });
   const { user, isAdmin } = useAuth();
   const [event, setEvent] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
@@ -46,8 +54,9 @@ function PublicBride() {
         setItems(ep || []);
       }
       setLoading(false);
+      if (paid === "1") toast.success(ev?.thank_you_message || "Pagamento confirmado. Obrigada pelo carinho! 💝");
     })();
-  }, [slug, user, isAdmin, token]);
+  }, [slug, user, isAdmin, token, paid]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (!event) return <div className="min-h-screen flex items-center justify-center"><p>Página não encontrada.</p></div>;
@@ -81,7 +90,7 @@ function PublicBride() {
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center px-6 overflow-hidden">
         {event.banner_url && (
           <div className="absolute inset-0 -z-20">
-            <img src={event.banner_url} alt="" className="w-full h-full object-cover opacity-40" />
+            <img src={event.banner_url} alt="" loading="eager" fetchPriority="high" className="w-full h-full object-cover opacity-40" />
             <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
           </div>
         )}
@@ -162,7 +171,7 @@ function WishCard({ item, eventId, delay }: any) {
       className="glass rounded-2xl overflow-hidden hover-lift group"
     >
       <div className="aspect-square bg-secondary overflow-hidden relative">
-        {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
+        {p.image_url ? <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
         {sold && <div className="absolute inset-0 bg-background/70 flex items-center justify-center"><span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">Presenteado</span></div>}
       </div>
       <div className="p-4">
@@ -236,7 +245,7 @@ function CartDialog({ open, onOpenChange, event }: any) {
             <div className="space-y-2 mb-4">
               {items.map(i => (
                 <div key={i.eventProductId} className="flex items-center gap-2 glass rounded-lg p-2">
-                  {i.imageUrl && <img src={i.imageUrl} className="w-12 h-12 rounded object-cover" alt="" />}
+                  {i.imageUrl && <img src={i.imageUrl} loading="lazy" className="w-12 h-12 rounded object-cover" alt="" />}
                   <div className="flex-1 min-w-0"><div className="text-sm truncate">{i.name}</div><div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div></div>
                   <div className="flex items-center gap-1">
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1)}><Minus className="w-3 h-3" /></Button>
