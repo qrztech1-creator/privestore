@@ -1,4 +1,4 @@
-// Extracts product list from a PDF catalog using Lovable AI (Gemini multimodal native PDF input)
+// Extracts product list from page images (rendered client-side from PDF) using Lovable AI.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -7,64 +7,57 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { pdf_base64 } = await req.json();
-    if (!pdf_base64) throw new Error("Missing pdf_base64");
+    const body = await req.json();
+    const pageImageUrls: string[] = body.page_image_urls || [];
+    if (!pageImageUrls.length) throw new Error("Missing page_image_urls");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("Missing LOVABLE_API_KEY");
 
-    const dataUrl = `data:application/pdf;base64,${pdf_base64}`;
+    const userContent: any[] = [
+      { type: "text", text: `Extraia TODOS os produtos deste catálogo. São ${pageImageUrls.length} páginas, na ordem.` },
+      ...pageImageUrls.map((url) => ({ type: "image_url", image_url: { url } })),
+    ];
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
             content:
-              "Você extrai catálogos de produtos de PDFs. Sempre chame a função extract_products com TODOS os produtos encontrados. Preços em reais como número decimal (ex: 129.90). Categorias coerentes (ex: Lingerie, Sapatos, Acessórios). Se não tiver descrição, deixe vazia.",
+              "Você extrai catálogos de produtos de imagens de páginas. Sempre chame extract_products com TODOS os produtos. Preço em reais como decimal (ex: 129.90). Categorias coerentes (ex: Lingerie, Sapatos, Acessórios). 'page' é o número (1-based) da imagem em que o produto aparece.",
           },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Extraia TODOS os produtos deste catálogo PDF." },
-              { type: "image_url", image_url: { url: dataUrl } },
-            ],
-          },
+          { role: "user", content: userContent },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_products",
-              description: "Lista de produtos extraídos do catálogo",
-              parameters: {
-                type: "object",
-                properties: {
-                  products: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string" },
-                        price: { type: "number" },
-                        category: { type: "string" },
-                        description: { type: "string" },
-                        page: { type: "integer", description: "Número da página (1-based) onde o produto aparece" },
-                      },
-                      required: ["name", "price"],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_products",
+            description: "Lista de produtos extraídos do catálogo",
+            parameters: {
+              type: "object",
+              properties: {
+                products: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      name: { type: "string" },
+                      price: { type: "number" },
+                      category: { type: "string" },
+                      description: { type: "string" },
+                      page: { type: "integer" },
                     },
+                    required: ["name", "price"],
                   },
                 },
-                required: ["products"],
               },
+              required: ["products"],
             },
           },
-        ],
+        }],
         tool_choice: { type: "function", function: { name: "extract_products" } },
       }),
     });
