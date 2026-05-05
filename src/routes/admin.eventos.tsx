@@ -74,8 +74,8 @@ function AdminEvents() {
                     toast.success("Link da noiva copiado");
                   }}>Painel da noiva</Button>
                 )}
-                <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => nav({ to: "/admin/eventos/$id", params: { id: e.id } })}>
-                  Editar
+                <Button asChild size="sm" className="bg-primary text-primary-foreground">
+                  <Link to="/admin/eventos/$id" params={{ id: e.id }}>Editar</Link>
                 </Button>
               </div>
             </div>
