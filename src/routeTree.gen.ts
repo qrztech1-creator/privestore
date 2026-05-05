@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PainelSlugRouteImport } from './routes/painel.$slug'
+import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as AdminEventosRouteImport } from './routes/admin.eventos'
 
 const LoginRoute = LoginRouteImport.update({
@@ -41,6 +42,11 @@ const PainelSlugRoute = PainelSlugRouteImport.update({
   path: '/painel/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProdutosRoute = AdminProdutosRouteImport.update({
+  id: '/admin/produtos',
+  path: '/admin/produtos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEventosRoute = AdminEventosRouteImport.update({
   id: '/admin/eventos',
   path: '/admin/eventos',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/eventos': typeof AdminEventosRoute
+  '/admin/produtos': typeof AdminProdutosRoute
   '/painel/$slug': typeof PainelSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/eventos': typeof AdminEventosRoute
+  '/admin/produtos': typeof AdminProdutosRoute
   '/painel/$slug': typeof PainelSlugRoute
   '/admin': typeof AdminIndexRoute
   '/painel': typeof PainelIndexRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin/eventos': typeof AdminEventosRoute
+  '/admin/produtos': typeof AdminProdutosRoute
   '/painel/$slug': typeof PainelSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
@@ -78,16 +87,25 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin/eventos'
+    | '/admin/produtos'
     | '/painel/$slug'
     | '/admin/'
     | '/painel/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/admin/eventos' | '/painel/$slug' | '/admin' | '/painel'
+  to:
+    | '/'
+    | '/login'
+    | '/admin/eventos'
+    | '/admin/produtos'
+    | '/painel/$slug'
+    | '/admin'
+    | '/painel'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/admin/eventos'
+    | '/admin/produtos'
     | '/painel/$slug'
     | '/admin/'
     | '/painel/'
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   AdminEventosRoute: typeof AdminEventosRoute
+  AdminProdutosRoute: typeof AdminProdutosRoute
   PainelSlugRoute: typeof PainelSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PainelIndexRoute: typeof PainelIndexRoute
@@ -139,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/produtos': {
+      id: '/admin/produtos'
+      path: '/admin/produtos'
+      fullPath: '/admin/produtos'
+      preLoaderRoute: typeof AdminProdutosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/eventos': {
       id: '/admin/eventos'
       path: '/admin/eventos'
@@ -153,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   AdminEventosRoute: AdminEventosRoute,
+  AdminProdutosRoute: AdminProdutosRoute,
   PainelSlugRoute: PainelSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   PainelIndexRoute: PainelIndexRoute,
@@ -160,3 +187,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
