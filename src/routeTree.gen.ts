@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PainelSlugRouteImport } from './routes/painel.$slug'
 
 const LoginRoute = LoginRouteImport.update({
@@ -29,6 +30,11 @@ const PainelIndexRoute = PainelIndexRouteImport.update({
   path: '/painel/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PainelSlugRoute = PainelSlugRouteImport.update({
   id: '/painel/$slug',
   path: '/painel/$slug',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/painel/$slug': typeof PainelSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/painel/$slug': typeof PainelSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/painel': typeof PainelIndexRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/painel/$slug': typeof PainelSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/painel/$slug' | '/painel/'
+  fullPaths: '/' | '/login' | '/painel/$slug' | '/admin/' | '/painel/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/painel/$slug' | '/painel'
-  id: '__root__' | '/' | '/login' | '/painel/$slug' | '/painel/'
+  to: '/' | '/login' | '/painel/$slug' | '/admin' | '/painel'
+  id: '__root__' | '/' | '/login' | '/painel/$slug' | '/admin/' | '/painel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   PainelSlugRoute: typeof PainelSlugRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   PainelIndexRoute: typeof PainelIndexRoute
 }
 
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/painel/$slug': {
       id: '/painel/$slug'
       path: '/painel/$slug'
@@ -106,6 +123,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   PainelSlugRoute: PainelSlugRoute,
+  AdminIndexRoute: AdminIndexRoute,
   PainelIndexRoute: PainelIndexRoute,
 }
 export const routeTree = rootRouteImport
