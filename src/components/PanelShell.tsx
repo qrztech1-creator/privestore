@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useEffect, type ReactNode } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3, Tag } from "lucide-react";
 
 interface Props {
   children: ReactNode;
