@@ -69,10 +69,19 @@ function AdminEvents() {
                   <a href={`/n/${e.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4" /></a>
                 </Button>
                 {e.manage_token && (
-                  <Button size="sm" variant="outline" onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/g/${e.manage_token}`);
-                    toast.success("Link da noiva copiado");
-                  }}>Painel da noiva</Button>
+                  <>
+                    <Button asChild size="sm" variant="outline" title="Abrir painel da noiva">
+                      <a href={`/g/${e.manage_token}`} target="_blank" rel="noreferrer">
+                        <Heart className="w-3.5 h-3.5 mr-1" />Painel da noiva
+                      </a>
+                    </Button>
+                    <Button size="icon" variant="ghost" title="Copiar link do painel da noiva" onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/g/${e.manage_token}`);
+                      toast.success("Link da noiva copiado");
+                    }}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </>
                 )}
                 <Button asChild size="sm" className="bg-primary text-primary-foreground">
                   <Link to="/admin/eventos/$id" params={{ id: e.id }}>Editar</Link>
