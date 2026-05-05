@@ -28,7 +28,7 @@ export interface EventOps {
 }
 
 export function EventEditor({
-  event, items, products, orders, invites, ops, isAdminMode, baseUrl,
+  event, items, products, orders, invites, ops, isAdminMode, baseUrl, initialTab = "page",
 }: {
   event: any;
   items: any[];
@@ -38,6 +38,7 @@ export function EventEditor({
   ops: EventOps;
   isAdminMode: boolean;
   baseUrl: string;
+  initialTab?: string;
 }) {
   const publicUrl = `${baseUrl}/n/${event.slug}`;
   const manageUrl = event.manage_token ? `${baseUrl}/g/${event.manage_token}` : "";
@@ -54,13 +55,13 @@ export function EventEditor({
           <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(publicUrl); toast.success("Link público copiado"); }}>
             <Copy className="w-3 h-3 mr-1" />Link público
           </Button>
-          <Button asChild size="sm" className="bg-gradient-to-r from-primary to-accent text-primary-foreground">
+          <Button asChild size="sm" className="bg-primary text-primary-foreground">
             <a href={publicUrl} target="_blank" rel="noreferrer"><ExternalLink className="w-3 h-3 mr-1" />Abrir página</a>
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="page" className="w-full">
+      <Tabs key={initialTab} defaultValue={initialTab} className="w-full">
         <TabsList className="glass flex-wrap h-auto">
           <TabsTrigger value="page"><Sparkles className="w-3 h-3 mr-1" />Página</TabsTrigger>
           <TabsTrigger value="list"><Heart className="w-3 h-3 mr-1" />Lista</TabsTrigger>
