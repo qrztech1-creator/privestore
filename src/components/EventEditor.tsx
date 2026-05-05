@@ -240,12 +240,12 @@ function OrdersTab({ orders, canEdit, reload }: any) {
               </div>
               <div className="text-right shrink-0">
                 <div className="text-primary font-display text-xl">R$ {Number(o.total).toFixed(2)}</div>
-                <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${o.status === "paid" ? "bg-emerald-500/20 text-emerald-300" : o.status === "fulfilled" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{o.status}</span>
+                <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${o.status === "paid" ? "bg-emerald-500/20 text-emerald-300" : o.status === "delivered" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{o.status}</span>
               </div>
             </div>
             {o.message && <p className="mt-2 text-sm italic text-muted-foreground">"{o.message}"</p>}
             {o.items && <ul className="mt-2 text-xs space-y-0.5">{o.items.map((i: any) => <li key={i.id}>· {i.qty}× {i.product_name} — R$ {Number(i.unit_price).toFixed(2)}</li>)}</ul>}
-            {canEdit && o.status !== "fulfilled" && (
+            {canEdit && o.status !== "delivered" && (
               <Button size="sm" variant="outline" className="mt-3" onClick={() => markDelivered(o.id)}>Marcar como entregue</Button>
             )}
           </div>
