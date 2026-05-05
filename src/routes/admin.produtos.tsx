@@ -64,6 +64,9 @@ function AdminProducts() {
     return out;
   }, [items, q, catId, statusF, sort]);
 
+  if (!loading && !isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
+
+
   return (
     <PanelShell mode="admin">
       <div className="p-6 md:p-10 max-w-7xl mx-auto">
