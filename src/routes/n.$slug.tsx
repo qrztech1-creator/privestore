@@ -192,7 +192,7 @@ function CartDialog({ open, onOpenChange, event }: any) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function checkout(viaWa: boolean) {
+  async function checkout(mode: "wa" | "register" | "card") {
     if (items.length === 0) return;
     if (!name) return toast.error("Informe seu nome");
     setBusy(true);
@@ -205,9 +205,21 @@ function CartDialog({ open, onOpenChange, event }: any) {
       order_id: order.id, event_product_id: i.eventProductId, product_id: i.productId,
       product_name: i.name, qty: i.qty, unit_price: i.price,
     })));
+
+    if (mode === "card") {
+      const { data, error: fnErr } = await supabase.functions.invoke("create-checkout", {
+        body: { order_id: order.id, success_url: window.location.href + "?paid=1", cancel_url: window.location.href },
+      });
+      setBusy(false);
+      if (fnErr || !data?.url) return toast.error(fnErr?.message || "Falha ao iniciar pagamento");
+      cart.clear(event.id);
+      window.location.href = data.url;
+      return;
+    }
+
     cart.clear(event.id);
     setBusy(false);
-    if (viaWa && event.whatsapp_number) {
+    if (mode === "wa" && event.whatsapp_number) {
       const text = `Oi! Acabei de fazer um pedido para ${event.bride_name}:\n\n${items.map(i => `• ${i.qty}x ${i.name}`).join("\n")}\n\nTotal: R$ ${total.toFixed(2)}\nMeu nome: ${name}`;
       window.open(`https://wa.me/${event.whatsapp_number.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`, "_blank");
     }
@@ -242,9 +254,10 @@ function CartDialog({ open, onOpenChange, event }: any) {
               <Input placeholder="E-mail (opcional)" value={email} onChange={(e) => setEmail(e.target.value)} />
               <Textarea placeholder="Mensagem para a noiva (opcional)" value={msg} onChange={(e) => setMsg(e.target.value)} rows={2} />
             </div>
-            <div className="flex gap-2 mt-4">
-              {event.whatsapp_number && <Button onClick={() => checkout(true)} disabled={busy} className="flex-1 bg-[#25D366] hover:bg-[#1faa55] text-white"><MessageCircle className="w-4 h-4 mr-1" />Finalizar no WhatsApp</Button>}
-              <Button onClick={() => checkout(false)} disabled={busy} variant="outline" className="flex-1">Apenas registrar</Button>
+            <div className="flex flex-col gap-2 mt-4">
+              <Button onClick={() => checkout("card")} disabled={busy} className="w-full bg-primary text-primary-foreground">💳 Pagar com cartão</Button>
+              {event.whatsapp_number && <Button onClick={() => checkout("wa")} disabled={busy} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white"><MessageCircle className="w-4 h-4 mr-1" />Combinar pelo WhatsApp</Button>}
+              <Button onClick={() => checkout("register")} disabled={busy} variant="outline" className="w-full">Apenas registrar presente</Button>
             </div>
           </>
         )}

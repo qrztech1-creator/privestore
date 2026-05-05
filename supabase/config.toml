@@ -1,1 +1,13 @@
 project_id = "utuutzspepikllyszdrb"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.import-products-pdf]
+verify_jwt = false
+
+[functions.generate-banner]
+verify_jwt = false

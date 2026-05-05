@@ -19,6 +19,7 @@ import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
 import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminEventosRouteImport } from './routes/admin.eventos'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminEventosIdRouteImport } from './routes/admin.eventos.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -71,6 +72,11 @@ const AdminEventosRoute = AdminEventosRouteImport.update({
   path: '/admin/eventos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/admin/categorias',
+  path: '/admin/categorias',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEventosIdRoute = AdminEventosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -80,6 +86,7 @@ const AdminEventosIdRoute = AdminEventosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/eventos': typeof AdminEventosRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/eventos': typeof AdminEventosRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/eventos': typeof AdminEventosRouteWithChildren
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/admin/categorias'
     | '/admin/eventos'
     | '/admin/pedidos'
     | '/admin/produtos'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin/categorias'
     | '/admin/eventos'
     | '/admin/pedidos'
     | '/admin/produtos'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/admin/categorias'
     | '/admin/eventos'
     | '/admin/pedidos'
     | '/admin/produtos'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminEventosRoute: typeof AdminEventosRouteWithChildren
   AdminPedidosRoute: typeof AdminPedidosRoute
   AdminProdutosRoute: typeof AdminProdutosRoute
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/admin/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/eventos/$id': {
       id: '/admin/eventos/$id'
       path: '/$id'
@@ -269,6 +289,7 @@ const AdminEventosRouteWithChildren = AdminEventosRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  AdminCategoriasRoute: AdminCategoriasRoute,
   AdminEventosRoute: AdminEventosRouteWithChildren,
   AdminPedidosRoute: AdminPedidosRoute,
   AdminProdutosRoute: AdminProdutosRoute,

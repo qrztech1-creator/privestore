@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useEffect, type ReactNode } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3, Tag } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -30,6 +30,7 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken }: 
     { to: "/admin", label: "Dashboard", icon: BarChart3 },
     { to: "/admin/eventos", label: "Noivas", icon: Heart },
     { to: "/admin/produtos", label: "Catálogo", icon: Package },
+    { to: "/admin/categorias", label: "Categorias", icon: Tag },
     { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
     { to: "/admin/usuarios", label: "Equipe", icon: LayoutDashboard },
   ];
