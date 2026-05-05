@@ -54,8 +54,9 @@ function PublicBride() {
         setItems(ep || []);
       }
       setLoading(false);
+      if (paid === "1") toast.success(ev?.thank_you_message || "Pagamento confirmado. Obrigada pelo carinho! 💝");
     })();
-  }, [slug, user, isAdmin, token]);
+  }, [slug, user, isAdmin, token, paid]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
   if (!event) return <div className="min-h-screen flex items-center justify-center"><p>Página não encontrada.</p></div>;
