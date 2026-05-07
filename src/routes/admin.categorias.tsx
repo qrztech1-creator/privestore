@@ -21,6 +21,7 @@ function AdminCategorias() {
   const [items, setItems] = useState<any[]>([]);
   const [editing, setEditing] = useState<any>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [dragOver, setDragOver] = useState<string | null>(null);
 
   async function load() {
     const { data } = await supabase.from("categories").select("*").order("position");
