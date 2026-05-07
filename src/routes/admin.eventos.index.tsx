@@ -19,7 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function AdminEvents() {
   const { isAdmin, loading } = useAuth();
-  const nav = useNavigate();
+  
   const [events, setEvents] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
