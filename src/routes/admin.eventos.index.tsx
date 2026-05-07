@@ -9,7 +9,7 @@ import { Plus, ExternalLink, Search, Copy, Heart } from "lucide-react";
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/eventos")({ component: AdminEvents });
+export const Route = createFileRoute("/admin/eventos/")({ component: AdminEvents });
 
 const TYPE_LABELS: Record<string, string> = {
   casamento: "Casamento",
