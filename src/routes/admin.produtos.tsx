@@ -223,11 +223,11 @@ function AdminProducts() {
   );
 }
 
-function ProductDialog({ item, cats, onClose }: any) {
-  const [f, setF] = useState({ name: "", description: "", price: 0, image_url: "", category_id: null, active: true, ...item });
+function ProductDialog({ item, cats, lines, onClose }: any) {
+  const [f, setF] = useState({ name: "", description: "", price: 0, image_url: "", category_id: null, line_id: null, active: true, ...item });
   const set = (k: string, v: any) => setF({ ...f, [k]: v });
   async function save() {
-    const payload = { name: f.name, description: f.description, price: Number(f.price) || 0, image_url: f.image_url, category_id: f.category_id || null, active: f.active };
+    const payload = { name: f.name, description: f.description, price: Number(f.price) || 0, image_url: f.image_url, category_id: f.category_id || null, line_id: f.line_id || null, active: f.active };
     const { error } = item.id
       ? await supabase.from("products").update(payload).eq("id", item.id)
       : await supabase.from("products").insert(payload);
@@ -241,15 +241,27 @@ function ProductDialog({ item, cats, onClose }: any) {
         <div className="space-y-3 max-h-[70vh] overflow-auto pr-2">
           <ImageInput value={f.image_url} onChange={(u) => set("image_url", u)} prompt={f.name} folder="products" label="Foto do produto" />
           <div><Label>Nome</Label><Input value={f.name} onChange={(e) => set("name", e.target.value)} /></div>
-          <div>
-            <Label>Categoria</Label>
-            <Select value={f.category_id || "none"} onValueChange={(v) => set("category_id", v === "none" ? null : v)}>
-              <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— Sem categoria —</SelectItem>
-                {cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Linha</Label>
+              <Select value={f.line_id || "none"} onValueChange={(v) => set("line_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Sem linha" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Sem linha —</SelectItem>
+                  {(lines || []).map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select value={f.category_id || "none"} onValueChange={(v) => set("category_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Sem categoria —</SelectItem>
+                  {cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div><Label>Preço (R$)</Label><Input type="number" step="0.01" value={f.price} onChange={(e) => set("price", e.target.value)} /></div>
           <div><Label>Descrição</Label><Textarea rows={3} value={f.description || ""} onChange={(e) => set("description", e.target.value)} /></div>
