@@ -156,29 +156,68 @@ function AdminProducts() {
           </Select>
         </div>
 
+        {selected.size > 0 && (
+          <div className="glass rounded-xl p-3 mb-4 flex flex-wrap items-center gap-2 sticky top-2 z-20">
+            <span className="text-sm font-medium">{selected.size} selecionado(s)</span>
+            <Select onValueChange={bulkSetCategory}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Mover para categoria..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Sem categoria —</SelectItem>
+                {cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select onValueChange={bulkSetLine}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Mover para linha..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Sem linha —</SelectItem>
+                {lines.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>Limpar</Button>
+            <span className="text-xs text-muted-foreground ml-auto">Dica: arraste para a aba Linhas/Categorias para mover.</span>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((p) => (
-            <div key={p.id} className={`glass rounded-xl overflow-hidden hover-lift ${!p.active ? "opacity-50" : ""}`}>
-              <div className="aspect-square bg-secondary relative">
-                {p.image_url && <img loading="lazy" src={p.image_url} alt={p.name} className="w-full h-full object-cover" />}
-                {p.category && <span className="absolute top-2 left-2 text-[10px] uppercase tracking-wider bg-background/90 backdrop-blur px-2 py-0.5 rounded">{p.category.name}</span>}
-              </div>
-              <div className="p-3">
-                <div className="font-medium truncate">{p.name}</div>
-                <div className="text-primary font-display text-lg">R$ {Number(p.price).toFixed(2)}</div>
-                <div className="flex gap-1 mt-2">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(p)}><Pencil className="w-3 h-3 mr-1" />Editar</Button>
-                  <Button size="sm" variant="ghost" onClick={() => duplicate(p)} title="Duplicar"><Copy className="w-3 h-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => toggleActive(p)} title={p.active ? "Desativar" : "Ativar"}><Power className="w-3 h-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash className="w-3 h-3" /></Button>
+          {filtered.map((p) => {
+            const isSel = selected.has(p.id);
+            return (
+              <div
+                key={p.id}
+                draggable
+                onDragStart={(e) => onDragStart(e, p.id)}
+                onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) toggleSelect(p.id); }}
+                className={`glass rounded-xl overflow-hidden hover-lift cursor-grab active:cursor-grabbing ${!p.active ? "opacity-50" : ""} ${isSel ? "ring-2 ring-primary" : ""}`}
+              >
+                <div className="aspect-square bg-secondary relative">
+                  {p.image_url && <img loading="lazy" src={p.image_url} alt={p.name} className="w-full h-full object-cover pointer-events-none" />}
+                  <input
+                    type="checkbox"
+                    checked={isSel}
+                    onChange={() => toggleSelect(p.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-2 right-2 w-5 h-5 rounded accent-primary"
+                  />
+                  {p.line && <span className="absolute top-2 left-2 text-[10px] uppercase tracking-wider bg-primary/90 text-primary-foreground backdrop-blur px-2 py-0.5 rounded">{p.line.name}</span>}
+                  {p.category && <span className="absolute bottom-2 left-2 text-[10px] uppercase tracking-wider bg-background/90 backdrop-blur px-2 py-0.5 rounded">{p.category.name}</span>}
+                </div>
+                <div className="p-3">
+                  <div className="font-medium truncate">{p.name}</div>
+                  <div className="text-primary font-display text-lg">R$ {Number(p.price).toFixed(2)}</div>
+                  <div className="flex gap-1 mt-2">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(p)}><Pencil className="w-3 h-3 mr-1" />Editar</Button>
+                    <Button size="sm" variant="ghost" onClick={() => duplicate(p)} title="Duplicar"><Copy className="w-3 h-3" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => toggleActive(p)} title={p.active ? "Desativar" : "Ativar"}><Power className="w-3 h-3" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash className="w-3 h-3" /></Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filtered.length === 0 && <div className="col-span-full glass rounded-xl p-12 text-center text-muted-foreground"><Sparkles className="w-6 h-6 mx-auto mb-2 text-primary" />Nenhum produto. Importe um PDF ou cadastre o primeiro.</div>}
         </div>
       </div>
-      {editing && <ProductDialog item={editing} cats={cats} onClose={() => { setEditing(null); load(); }} />}
+      {editing && <ProductDialog item={editing} cats={cats} lines={lines} onClose={() => { setEditing(null); load(); }} />}
       {importing && <ImportPdfDialog open={importing} onClose={() => { setImporting(false); load(); }} />}
     </PanelShell>
   );
