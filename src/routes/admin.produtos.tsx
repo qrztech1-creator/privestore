@@ -70,7 +70,7 @@ function AdminProducts() {
     return out;
   }, [items, q, catId, lineId, statusF, sort]);
 
-  function toggleSelect(id: string, e?: React.MouseEvent) {
+  function toggleSelect(id: string) {
     const s = new Set(selected);
     if (s.has(id)) s.delete(id); else s.add(id);
     setSelected(s);
