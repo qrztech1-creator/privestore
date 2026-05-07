@@ -40,6 +40,15 @@ function AdminCategorias() {
     await supabase.from("categories").delete().eq("id", id); load();
   }
 
+  async function onDrop(catId: string | null, e: React.DragEvent) {
+    e.preventDefault(); setDragOver(null);
+    const ids: string[] = JSON.parse(e.dataTransfer.getData("product-ids") || "[]");
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("products").update({ category_id: catId }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} produto(s) movido(s)`); load();
+  }
+
   return (
     <PanelShell mode="admin">
       <div className="p-6 md:p-10 max-w-5xl mx-auto">
