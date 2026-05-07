@@ -154,6 +154,21 @@ function PublicBride() {
   );
 }
 
+function CartFab({ eventId, onClick }: { eventId: string; onClick: () => void }) {
+  const items = useCart((s) => s.items[eventId] || []);
+  const count = items.reduce((s, i) => s + i.qty, 0);
+  return (
+    <Button onClick={onClick} className="fixed bottom-6 right-6 z-30 rounded-full h-14 w-14 shadow-glow bg-gradient-to-r from-primary to-accent text-primary-foreground" size="icon">
+      <ShoppingBag className="w-5 h-5" />
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 bg-background text-primary border border-primary text-[10px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center">
+          {count}
+        </span>
+      )}
+    </Button>
+  );
+}
+
 function WishCard({ item, eventId, delay }: any) {
   const add = useCart((s) => s.add);
   const remaining = (item.desired_qty || 0) - (item.purchased_qty || 0);
