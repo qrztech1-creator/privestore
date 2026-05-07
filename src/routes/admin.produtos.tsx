@@ -20,19 +20,23 @@ function AdminProducts() {
   const { isAdmin, loading } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
+  const [lines, setLines] = useState<any[]>([]);
   const [editing, setEditing] = useState<any>(null);
   const [importing, setImporting] = useState(false);
   const [q, setQ] = useState("");
   const [catId, setCatId] = useState<string>("all");
+  const [lineId, setLineId] = useState<string>("all");
   const [statusF, setStatusF] = useState<string>("all");
   const [sort, setSort] = useState<string>("recent");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   async function load() {
-    const [{ data: prods }, { data: c }] = await Promise.all([
-      supabase.from("products").select("*, category:categories(id,name,slug,color)").order("created_at", { ascending: false }),
+    const [{ data: prods }, { data: c }, { data: l }] = await Promise.all([
+      supabase.from("products").select("*, category:categories(id,name,slug,color), line:product_lines(id,name,slug,color)").order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("position"),
+      supabase.from("product_lines").select("*").order("position"),
     ]);
-    setItems(prods || []); setCats(c || []);
+    setItems(prods || []); setCats(c || []); setLines(l || []);
   }
   useEffect(() => { load(); }, []);
 
