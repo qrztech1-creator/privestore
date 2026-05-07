@@ -129,6 +129,14 @@ function AdminProducts() {
               {cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={lineId} onValueChange={setLineId}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Linha" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas linhas</SelectItem>
+              <SelectItem value="none">— Sem linha —</SelectItem>
+              {lines.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={statusF} onValueChange={setStatusF}>
             <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
