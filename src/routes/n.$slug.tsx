@@ -109,9 +109,7 @@ function PublicBride() {
             </div>
           )}
         </motion.div>
-        <Button onClick={() => setCartOpen(true)} className="fixed bottom-6 right-6 z-30 rounded-full h-14 w-14 shadow-glow bg-gradient-to-r from-primary to-accent text-primary-foreground" size="icon">
-          <ShoppingBag className="w-5 h-5" />
-        </Button>
+        <CartFab eventId={event.id} onClick={() => setCartOpen(true)} />
       </section>
 
       {/* MESSAGE */}
