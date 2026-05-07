@@ -58,9 +58,8 @@ function AdminProducts() {
     let out = items.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
       if (catId !== "all" && p.category_id !== catId) return false;
-      if (lineId !== "all" && p.line_id !== (lineId === "none" ? null : lineId)) {
-        if (lineId === "none" ? p.line_id !== null : true) return false;
-      }
+      if (lineId === "none" && p.line_id) return false;
+      if (lineId !== "all" && lineId !== "none" && p.line_id !== lineId) return false;
       if (statusF === "active" && !p.active) return false;
       if (statusF === "inactive" && p.active) return false;
       return true;
