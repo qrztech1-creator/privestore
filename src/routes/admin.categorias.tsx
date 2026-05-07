@@ -61,8 +61,23 @@ function AdminCategorias() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver("none"); }}
+            onDragLeave={() => setDragOver(null)}
+            onDrop={(e) => onDrop(null, e)}
+            className={`glass rounded-xl p-4 border-2 border-dashed ${dragOver === "none" ? "border-primary bg-primary/10" : "border-border"}`}
+          >
+            <div className="text-sm font-medium">Sem categoria</div>
+            <div className="text-xs text-muted-foreground">Solte aqui para remover</div>
+          </div>
           {items.map((c) => (
-            <div key={c.id} className="glass rounded-xl p-4 flex items-center justify-between hover-lift">
+            <div
+              key={c.id}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(c.id); }}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={(e) => onDrop(c.id, e)}
+              className={`glass rounded-xl p-4 flex items-center justify-between hover-lift transition ${dragOver === c.id ? "ring-2 ring-primary bg-primary/10" : ""}`}
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: c.color || "var(--secondary)" }}>
                   <Tag className="w-4 h-4" />
