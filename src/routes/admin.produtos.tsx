@@ -58,6 +58,9 @@ function AdminProducts() {
     let out = items.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
       if (catId !== "all" && p.category_id !== catId) return false;
+      if (lineId !== "all" && p.line_id !== (lineId === "none" ? null : lineId)) {
+        if (lineId === "none" ? p.line_id !== null : true) return false;
+      }
       if (statusF === "active" && !p.active) return false;
       if (statusF === "inactive" && p.active) return false;
       return true;
@@ -66,7 +69,37 @@ function AdminProducts() {
     if (sort === "price-desc") out = [...out].sort((a, b) => b.price - a.price);
     if (sort === "name") out = [...out].sort((a, b) => a.name.localeCompare(b.name));
     return out;
-  }, [items, q, catId, statusF, sort]);
+  }, [items, q, catId, lineId, statusF, sort]);
+
+  function toggleSelect(id: string, e?: React.MouseEvent) {
+    const s = new Set(selected);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    setSelected(s);
+  }
+  function clearSelection() { setSelected(new Set()); }
+
+  function onDragStart(e: React.DragEvent, productId: string) {
+    const ids = selected.has(productId) ? Array.from(selected) : [productId];
+    e.dataTransfer.setData("product-ids", JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  async function bulkSetCategory(value: string) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const category_id = value === "none" ? null : value;
+    const { error } = await supabase.from("products").update({ category_id }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} produto(s) atualizados`); clearSelection(); load();
+  }
+  async function bulkSetLine(value: string) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const line_id = value === "none" ? null : value;
+    const { error } = await supabase.from("products").update({ line_id }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} produto(s) atualizados`); clearSelection(); load();
+  }
 
   if (!loading && !isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
 
