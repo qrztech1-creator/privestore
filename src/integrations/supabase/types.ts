@@ -298,6 +298,33 @@ export type Database = {
           },
         ]
       }
+      product_lines: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          position: number
+          slug: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          slug: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -307,6 +334,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          line_id: string | null
           name: string
           price: number
         }
@@ -318,6 +346,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          line_id?: string | null
           name: string
           price?: number
         }
@@ -329,6 +358,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          line_id?: string | null
           name?: string
           price?: number
         }
@@ -338,6 +368,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "product_lines"
             referencedColumns: ["id"]
           },
         ]

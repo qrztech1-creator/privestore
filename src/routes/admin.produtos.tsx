@@ -20,19 +20,23 @@ function AdminProducts() {
   const { isAdmin, loading } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [cats, setCats] = useState<any[]>([]);
+  const [lines, setLines] = useState<any[]>([]);
   const [editing, setEditing] = useState<any>(null);
   const [importing, setImporting] = useState(false);
   const [q, setQ] = useState("");
   const [catId, setCatId] = useState<string>("all");
+  const [lineId, setLineId] = useState<string>("all");
   const [statusF, setStatusF] = useState<string>("all");
   const [sort, setSort] = useState<string>("recent");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   async function load() {
-    const [{ data: prods }, { data: c }] = await Promise.all([
-      supabase.from("products").select("*, category:categories(id,name,slug,color)").order("created_at", { ascending: false }),
+    const [{ data: prods }, { data: c }, { data: l }] = await Promise.all([
+      supabase.from("products").select("*, category:categories(id,name,slug,color), line:product_lines(id,name,slug,color)").order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("position"),
+      supabase.from("product_lines").select("*").order("position"),
     ]);
-    setItems(prods || []); setCats(c || []);
+    setItems(prods || []); setCats(c || []); setLines(l || []);
   }
   useEffect(() => { load(); }, []);
 
@@ -54,6 +58,8 @@ function AdminProducts() {
     let out = items.filter((p) => {
       if (q && !p.name.toLowerCase().includes(q.toLowerCase())) return false;
       if (catId !== "all" && p.category_id !== catId) return false;
+      if (lineId === "none" && p.line_id) return false;
+      if (lineId !== "all" && lineId !== "none" && p.line_id !== lineId) return false;
       if (statusF === "active" && !p.active) return false;
       if (statusF === "inactive" && p.active) return false;
       return true;
@@ -62,7 +68,37 @@ function AdminProducts() {
     if (sort === "price-desc") out = [...out].sort((a, b) => b.price - a.price);
     if (sort === "name") out = [...out].sort((a, b) => a.name.localeCompare(b.name));
     return out;
-  }, [items, q, catId, statusF, sort]);
+  }, [items, q, catId, lineId, statusF, sort]);
+
+  function toggleSelect(id: string) {
+    const s = new Set(selected);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    setSelected(s);
+  }
+  function clearSelection() { setSelected(new Set()); }
+
+  function onDragStart(e: React.DragEvent, productId: string) {
+    const ids = selected.has(productId) ? Array.from(selected) : [productId];
+    e.dataTransfer.setData("product-ids", JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  async function bulkSetCategory(value: string) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const category_id = value === "none" ? null : value;
+    const { error } = await supabase.from("products").update({ category_id }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} produto(s) atualizados`); clearSelection(); load();
+  }
+  async function bulkSetLine(value: string) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const line_id = value === "none" ? null : value;
+    const { error } = await supabase.from("products").update({ line_id }).in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} produto(s) atualizados`); clearSelection(); load();
+  }
 
   if (!loading && !isAdmin) return <PanelShell mode="admin"><div className="p-10">Acesso restrito.</div></PanelShell>;
 
@@ -93,6 +129,14 @@ function AdminProducts() {
               {cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={lineId} onValueChange={setLineId}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Linha" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas linhas</SelectItem>
+              <SelectItem value="none">— Sem linha —</SelectItem>
+              {lines.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Select value={statusF} onValueChange={setStatusF}>
             <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -112,39 +156,78 @@ function AdminProducts() {
           </Select>
         </div>
 
+        {selected.size > 0 && (
+          <div className="glass rounded-xl p-3 mb-4 flex flex-wrap items-center gap-2 sticky top-2 z-20">
+            <span className="text-sm font-medium">{selected.size} selecionado(s)</span>
+            <Select onValueChange={bulkSetCategory}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Mover para categoria..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Sem categoria —</SelectItem>
+                {cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select onValueChange={bulkSetLine}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Mover para linha..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Sem linha —</SelectItem>
+                {lines.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" size="sm" onClick={clearSelection}>Limpar</Button>
+            <span className="text-xs text-muted-foreground ml-auto">Dica: arraste para a aba Linhas/Categorias para mover.</span>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((p) => (
-            <div key={p.id} className={`glass rounded-xl overflow-hidden hover-lift ${!p.active ? "opacity-50" : ""}`}>
-              <div className="aspect-square bg-secondary relative">
-                {p.image_url && <img loading="lazy" src={p.image_url} alt={p.name} className="w-full h-full object-cover" />}
-                {p.category && <span className="absolute top-2 left-2 text-[10px] uppercase tracking-wider bg-background/90 backdrop-blur px-2 py-0.5 rounded">{p.category.name}</span>}
-              </div>
-              <div className="p-3">
-                <div className="font-medium truncate">{p.name}</div>
-                <div className="text-primary font-display text-lg">R$ {Number(p.price).toFixed(2)}</div>
-                <div className="flex gap-1 mt-2">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(p)}><Pencil className="w-3 h-3 mr-1" />Editar</Button>
-                  <Button size="sm" variant="ghost" onClick={() => duplicate(p)} title="Duplicar"><Copy className="w-3 h-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => toggleActive(p)} title={p.active ? "Desativar" : "Ativar"}><Power className="w-3 h-3" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash className="w-3 h-3" /></Button>
+          {filtered.map((p) => {
+            const isSel = selected.has(p.id);
+            return (
+              <div
+                key={p.id}
+                draggable
+                onDragStart={(e) => onDragStart(e, p.id)}
+                onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) toggleSelect(p.id); }}
+                className={`glass rounded-xl overflow-hidden hover-lift cursor-grab active:cursor-grabbing ${!p.active ? "opacity-50" : ""} ${isSel ? "ring-2 ring-primary" : ""}`}
+              >
+                <div className="aspect-square bg-secondary relative">
+                  {p.image_url && <img loading="lazy" src={p.image_url} alt={p.name} className="w-full h-full object-cover pointer-events-none" />}
+                  <input
+                    type="checkbox"
+                    checked={isSel}
+                    onChange={() => toggleSelect(p.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-2 right-2 w-5 h-5 rounded accent-primary"
+                  />
+                  {p.line && <span className="absolute top-2 left-2 text-[10px] uppercase tracking-wider bg-primary/90 text-primary-foreground backdrop-blur px-2 py-0.5 rounded">{p.line.name}</span>}
+                  {p.category && <span className="absolute bottom-2 left-2 text-[10px] uppercase tracking-wider bg-background/90 backdrop-blur px-2 py-0.5 rounded">{p.category.name}</span>}
+                </div>
+                <div className="p-3">
+                  <div className="font-medium truncate">{p.name}</div>
+                  <div className="text-primary font-display text-lg">R$ {Number(p.price).toFixed(2)}</div>
+                  <div className="flex gap-1 mt-2">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(p)}><Pencil className="w-3 h-3 mr-1" />Editar</Button>
+                    <Button size="sm" variant="ghost" onClick={() => duplicate(p)} title="Duplicar"><Copy className="w-3 h-3" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => toggleActive(p)} title={p.active ? "Desativar" : "Ativar"}><Power className="w-3 h-3" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash className="w-3 h-3" /></Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filtered.length === 0 && <div className="col-span-full glass rounded-xl p-12 text-center text-muted-foreground"><Sparkles className="w-6 h-6 mx-auto mb-2 text-primary" />Nenhum produto. Importe um PDF ou cadastre o primeiro.</div>}
         </div>
       </div>
-      {editing && <ProductDialog item={editing} cats={cats} onClose={() => { setEditing(null); load(); }} />}
+      {editing && <ProductDialog item={editing} cats={cats} lines={lines} onClose={() => { setEditing(null); load(); }} />}
       {importing && <ImportPdfDialog open={importing} onClose={() => { setImporting(false); load(); }} />}
     </PanelShell>
   );
 }
 
-function ProductDialog({ item, cats, onClose }: any) {
-  const [f, setF] = useState({ name: "", description: "", price: 0, image_url: "", category_id: null, active: true, ...item });
+function ProductDialog({ item, cats, lines, onClose }: any) {
+  const [f, setF] = useState({ name: "", description: "", price: 0, image_url: "", category_id: null, line_id: null, active: true, ...item });
   const set = (k: string, v: any) => setF({ ...f, [k]: v });
   async function save() {
-    const payload = { name: f.name, description: f.description, price: Number(f.price) || 0, image_url: f.image_url, category_id: f.category_id || null, active: f.active };
+    const payload = { name: f.name, description: f.description, price: Number(f.price) || 0, image_url: f.image_url, category_id: f.category_id || null, line_id: f.line_id || null, active: f.active };
     const { error } = item.id
       ? await supabase.from("products").update(payload).eq("id", item.id)
       : await supabase.from("products").insert(payload);
@@ -158,15 +241,27 @@ function ProductDialog({ item, cats, onClose }: any) {
         <div className="space-y-3 max-h-[70vh] overflow-auto pr-2">
           <ImageInput value={f.image_url} onChange={(u) => set("image_url", u)} prompt={f.name} folder="products" label="Foto do produto" />
           <div><Label>Nome</Label><Input value={f.name} onChange={(e) => set("name", e.target.value)} /></div>
-          <div>
-            <Label>Categoria</Label>
-            <Select value={f.category_id || "none"} onValueChange={(v) => set("category_id", v === "none" ? null : v)}>
-              <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— Sem categoria —</SelectItem>
-                {cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Linha</Label>
+              <Select value={f.line_id || "none"} onValueChange={(v) => set("line_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Sem linha" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Sem linha —</SelectItem>
+                  {(lines || []).map((l: any) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <Select value={f.category_id || "none"} onValueChange={(v) => set("category_id", v === "none" ? null : v)}>
+                <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Sem categoria —</SelectItem>
+                  {cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div><Label>Preço (R$)</Label><Input type="number" step="0.01" value={f.price} onChange={(e) => set("price", e.target.value)} /></div>
           <div><Label>Descrição</Label><Textarea rows={3} value={f.description || ""} onChange={(e) => set("description", e.target.value)} /></div>

@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useEffect, type ReactNode, type ComponentType } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, LogOut, ShoppingBag, Heart, BarChart3, Tag, Users } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, ShoppingBag, BarChart3, Tag, Users, Sparkles } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -29,6 +29,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/categorias", label: "Categorias", icon: Tag },
+  { to: "/admin/linhas", label: "Linhas", icon: Sparkles },
   { to: "/admin/usuarios", label: "Equipe", icon: LayoutDashboard },
 ];
 

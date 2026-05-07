@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PanelShell } from "@/components/PanelShell";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Plus, ExternalLink, Search, Copy, Heart } from "lucide-react";
 import { CreateEventDialog } from "@/components/CreateEventDialog";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin/eventos")({ component: AdminEvents });
+export const Route = createFileRoute("/admin/eventos/")({ component: AdminEvents });
 
 const TYPE_LABELS: Record<string, string> = {
   casamento: "Casamento",
@@ -19,7 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function AdminEvents() {
   const { isAdmin, loading } = useAuth();
-  const nav = useNavigate();
+  
   const [events, setEvents] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
