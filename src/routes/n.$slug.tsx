@@ -50,7 +50,11 @@ function PublicBride() {
           const { data: inv } = await supabase.from("event_invites").select("*").eq("token", token).eq("event_id", ev.id).maybeSingle();
           setAccessOk(!!inv);
         }
-        const { data: ep } = await supabase.from("event_products").select("*, product:products(*)").eq("event_id", ev.id).order("position");
+        const { data: ep } = await supabase
+          .from("event_products")
+          .select("*, product:products(*, images:product_images(*), variants:product_variants(*))")
+          .eq("event_id", ev.id)
+          .order("position");
         setItems(ep || []);
       }
       setLoading(false);
@@ -175,6 +179,33 @@ function WishCard({ item, eventId, delay }: any) {
   const sold = remaining <= 0;
   const p = item.product;
   if (!p) return null;
+
+  const variants: any[] = p.variants || [];
+  const images: any[] = p.images || [];
+  const colors = Array.from(new Set(variants.map((v) => v.color_name).filter(Boolean))) as string[];
+  const sizesByColor = (color: string | null) =>
+    Array.from(new Set(variants.filter((v) => !color || v.color_name === color).map((v) => v.size).filter(Boolean))) as string[];
+
+  const [color, setColor] = useState<string | null>(colors[0] || null);
+  const [size, setSize] = useState<string | null>(null);
+
+  // pick image: prefer image matching color, fallback to general image, then primary
+  const colorImages = color ? images.filter((i) => i.color_name === color) : [];
+  const generalImages = images.filter((i) => !i.color_name);
+  const visibleImage =
+    colorImages[0]?.url || generalImages[0]?.url || p.image_url;
+
+  const colorHex = (c: string) => variants.find((v) => v.color_name === c)?.color_hex || "#cccccc";
+
+  const selectedVariant = variants.find(
+    (v) => (!color || v.color_name === color) && (!size || v.size === size)
+  );
+  const finalPrice = Number(selectedVariant?.price_override ?? p.price);
+  const sizes = sizesByColor(color);
+
+  const needsSize = sizes.length > 0 && !size;
+  const needsColor = colors.length > 0 && !color;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -184,20 +215,64 @@ function WishCard({ item, eventId, delay }: any) {
       className="glass rounded-2xl overflow-hidden hover-lift group"
     >
       <div className="aspect-square bg-secondary overflow-hidden relative">
-        {p.image_url ? <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
+        {visibleImage ? <img src={visibleImage} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
         {sold && <div className="absolute inset-0 bg-background/70 flex items-center justify-center"><span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">Presenteado</span></div>}
       </div>
-      <div className="p-4">
+      <div className="p-4 space-y-2">
         <h3 className="font-medium truncate">{p.name}</h3>
-        <div className="text-primary font-display text-xl">R$ {Number(p.price).toFixed(2)}</div>
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">{remaining > 0 ? `${remaining} disponível${remaining > 1 ? "is" : ""}` : "esgotado"}</div>
+        <div className="text-primary font-display text-xl">R$ {finalPrice.toFixed(2)}</div>
+
+        {colors.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {colors.map((c) => (
+              <button
+                key={c}
+                onClick={() => { setColor(c); setSize(null); }}
+                title={c}
+                className={`w-6 h-6 rounded-full border-2 transition ${color === c ? "border-primary scale-110" : "border-border"}`}
+                style={{ background: colorHex(c) }}
+              />
+            ))}
+          </div>
+        )}
+
+        {sizes.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {sizes.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSize(s)}
+                className={`text-[10px] uppercase px-2 py-0.5 rounded border transition ${size === s ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{remaining > 0 ? `${remaining} disponível${remaining > 1 ? "is" : ""}` : "esgotado"}</div>
         <Button
           size="sm"
-          disabled={sold}
-          onClick={() => { add(eventId, { eventProductId: item.id, productId: p.id, name: p.name, price: Number(p.price), imageUrl: p.image_url, qty: 1, maxQty: remaining }); toast.success("Adicionado ao carrinho"); }}
-          className="w-full mt-3 bg-gradient-to-r from-primary to-accent text-primary-foreground"
+          disabled={sold || needsColor || needsSize}
+          onClick={() => {
+            const label = [color, size].filter(Boolean).join(" · ") || null;
+            add(eventId, {
+              eventProductId: item.id,
+              productId: p.id,
+              name: p.name,
+              price: finalPrice,
+              imageUrl: visibleImage,
+              qty: 1,
+              maxQty: remaining,
+              variantId: selectedVariant?.id || null,
+              variantLabel: label,
+            });
+            toast.success("Adicionado ao carrinho");
+          }}
+          className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground"
         >
-          <Plus className="w-3 h-3 mr-1" />Presentear
+          <Plus className="w-3 h-3 mr-1" />
+          {needsColor ? "Escolha uma cor" : needsSize ? "Escolha o tamanho" : "Presentear"}
         </Button>
       </div>
     </motion.div>
@@ -225,7 +300,9 @@ function CartDialog({ open, onOpenChange, event }: any) {
     if (error) { setBusy(false); return toast.error(error.message); }
     await supabase.from("order_items").insert(items.map(i => ({
       order_id: order.id, event_product_id: i.eventProductId, product_id: i.productId,
-      product_name: i.name, qty: i.qty, unit_price: i.price,
+      product_name: i.variantLabel ? `${i.name} — ${i.variantLabel}` : i.name,
+      qty: i.qty, unit_price: i.price,
+      variant_id: i.variantId || null, variant_label: i.variantLabel || null,
     })));
 
     if (mode === "card") {
@@ -257,14 +334,18 @@ function CartDialog({ open, onOpenChange, event }: any) {
           <>
             <div className="space-y-2 mb-4">
               {items.map(i => (
-                <div key={i.eventProductId} className="flex items-center gap-2 glass rounded-lg p-2">
+                <div key={`${i.eventProductId}::${i.variantId || ""}`} className="flex items-center gap-2 glass rounded-lg p-2">
                   {i.imageUrl && <img src={i.imageUrl} loading="lazy" className="w-12 h-12 rounded object-cover" alt="" />}
-                  <div className="flex-1 min-w-0"><div className="text-sm truncate">{i.name}</div><div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm truncate">{i.name}</div>
+                    {i.variantLabel && <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.variantLabel}</div>}
+                    <div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div>
+                  </div>
                   <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1)}><Minus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
                     <span className="w-6 text-center text-sm">{i.qty}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty + 1)}><Plus className="w-3 h-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.remove(event.id, i.eventProductId)}><Trash className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.remove(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
                   </div>
                 </div>
               ))}

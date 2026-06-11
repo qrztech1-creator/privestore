@@ -123,6 +123,7 @@ export type Database = {
       }
       events: {
         Row: {
+          archived_at: string | null
           banner_url: string | null
           bride_name: string
           contact_email: string | null
@@ -146,6 +147,7 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          archived_at?: string | null
           banner_url?: string | null
           bride_name: string
           contact_email?: string | null
@@ -169,6 +171,7 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          archived_at?: string | null
           banner_url?: string | null
           bride_name?: string
           contact_email?: string | null
@@ -202,6 +205,8 @@ export type Database = {
           product_name: string
           qty: number
           unit_price: number
+          variant_id: string | null
+          variant_label: string | null
         }
         Insert: {
           event_product_id?: string | null
@@ -211,6 +216,8 @@ export type Database = {
           product_name: string
           qty?: number
           unit_price?: number
+          variant_id?: string | null
+          variant_label?: string | null
         }
         Update: {
           event_product_id?: string | null
@@ -220,6 +227,8 @@ export type Database = {
           product_name?: string
           qty?: number
           unit_price?: number
+          variant_id?: string | null
+          variant_label?: string | null
         }
         Relationships: [
           {
@@ -241,6 +250,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -298,6 +314,41 @@ export type Database = {
           },
         ]
       }
+      product_images: {
+        Row: {
+          color_name: string | null
+          created_at: string
+          id: string
+          position: number
+          product_id: string
+          url: string
+        }
+        Insert: {
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          position?: number
+          product_id: string
+          url: string
+        }
+        Update: {
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          position?: number
+          product_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_lines: {
         Row: {
           color: string | null
@@ -324,6 +375,53 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      product_variants: {
+        Row: {
+          color_hex: string | null
+          color_name: string | null
+          created_at: string
+          id: string
+          position: number
+          price_override: number | null
+          product_id: string
+          size: string | null
+          sku: string | null
+          stock: number | null
+        }
+        Insert: {
+          color_hex?: string | null
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          position?: number
+          price_override?: number | null
+          product_id: string
+          size?: string | null
+          sku?: string | null
+          stock?: number | null
+        }
+        Update: {
+          color_hex?: string | null
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          position?: number
+          price_override?: number | null
+          product_id?: string
+          size?: string | null
+          sku?: string | null
+          stock?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -466,6 +564,7 @@ export type Database = {
       get_event_by_token: {
         Args: { _token: string }
         Returns: {
+          archived_at: string | null
           banner_url: string | null
           bride_name: string
           contact_email: string | null
@@ -533,6 +632,7 @@ export type Database = {
       update_event_by_token: {
         Args: { _patch: Json; _token: string }
         Returns: {
+          archived_at: string | null
           banner_url: string | null
           bride_name: string
           contact_email: string | null
