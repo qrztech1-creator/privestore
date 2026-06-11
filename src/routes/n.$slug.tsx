@@ -334,14 +334,18 @@ function CartDialog({ open, onOpenChange, event }: any) {
           <>
             <div className="space-y-2 mb-4">
               {items.map(i => (
-                <div key={i.eventProductId} className="flex items-center gap-2 glass rounded-lg p-2">
+                <div key={`${i.eventProductId}::${i.variantId || ""}`} className="flex items-center gap-2 glass rounded-lg p-2">
                   {i.imageUrl && <img src={i.imageUrl} loading="lazy" className="w-12 h-12 rounded object-cover" alt="" />}
-                  <div className="flex-1 min-w-0"><div className="text-sm truncate">{i.name}</div><div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm truncate">{i.name}</div>
+                    {i.variantLabel && <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.variantLabel}</div>}
+                    <div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div>
+                  </div>
                   <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1)}><Minus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
                     <span className="w-6 text-center text-sm">{i.qty}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty + 1)}><Plus className="w-3 h-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.remove(event.id, i.eventProductId)}><Trash className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.remove(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
                   </div>
                 </div>
               ))}
