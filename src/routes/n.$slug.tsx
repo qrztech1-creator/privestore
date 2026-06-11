@@ -300,7 +300,9 @@ function CartDialog({ open, onOpenChange, event }: any) {
     if (error) { setBusy(false); return toast.error(error.message); }
     await supabase.from("order_items").insert(items.map(i => ({
       order_id: order.id, event_product_id: i.eventProductId, product_id: i.productId,
-      product_name: i.name, qty: i.qty, unit_price: i.price,
+      product_name: i.variantLabel ? `${i.name} — ${i.variantLabel}` : i.name,
+      qty: i.qty, unit_price: i.price,
+      variant_id: i.variantId || null, variant_label: i.variantLabel || null,
     })));
 
     if (mode === "card") {
