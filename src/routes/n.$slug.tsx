@@ -39,16 +39,23 @@ function PublicBride() {
 
   useEffect(() => {
     (async () => {
-      const { data: ev } = await supabase.from("events").select("*").eq("slug", slug).maybeSingle();
+      // Public-safe read (no manage_token, secret_code, contact info)
+      const { data: pubRows } = await supabase.rpc("get_public_event_by_slug", { _slug: slug });
+      let ev: any = Array.isArray(pubRows) ? pubRows[0] : pubRows;
+
+      // Owner/admin can also fetch full row directly (RLS-gated)
+      if (user) {
+        const { data: full } = await supabase.from("events").select("*").eq("slug", slug).maybeSingle();
+        if (full) ev = full;
+      }
       setEvent(ev);
       if (ev) {
-        // Owner or admin always has access; public events open; private/secret need invite token
         const isOwner = user && ev.owner_id === user.id;
         if (ev.visibility === "public" || isOwner || isAdmin) {
           setAccessOk(true);
         } else if (token) {
-          const { data: inv } = await supabase.from("event_invites").select("*").eq("token", token).eq("event_id", ev.id).maybeSingle();
-          setAccessOk(!!inv);
+          const { data: ok } = await supabase.rpc("validate_invite_token", { _event_id: ev.id, _token: token });
+          setAccessOk(!!ok);
         }
         const { data: ep } = await supabase
           .from("event_products")
