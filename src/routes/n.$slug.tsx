@@ -51,18 +51,24 @@ function PublicBride() {
       setEvent(ev);
       if (ev) {
         const isOwner = user && ev.owner_id === user.id;
+        let allowed = false;
         if (ev.visibility === "public" || isOwner || isAdmin) {
-          setAccessOk(true);
+          allowed = true;
         } else if (token) {
           const { data: ok } = await supabase.rpc("validate_invite_token", { _event_id: ev.id, _token: token });
-          setAccessOk(!!ok);
+          allowed = !!ok;
         }
-        const { data: ep } = await supabase
-          .from("event_products")
-          .select("*, product:products(*, images:product_images(*), variants:product_variants(*))")
-          .eq("event_id", ev.id)
-          .order("position");
-        setItems(ep || []);
+        setAccessOk(allowed);
+
+        if (allowed) {
+          // Use SECURITY DEFINER RPC that validates token/visibility and
+          // returns the full nested product (variants + images).
+          const { data: epData } = await supabase.rpc("get_event_products_for_guest", {
+            _event_id: ev.id,
+            _token: token ?? null,
+          });
+          setItems(Array.isArray(epData) ? epData : []);
+        }
       }
       setLoading(false);
       if (paid === "1") toast.success(ev?.thank_you_message || "Pagamento confirmado. Obrigada pelo carinho! 💝");
