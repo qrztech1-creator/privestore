@@ -92,6 +92,16 @@ function BrideArea() {
       if (error) throw error;
       await load();
     },
+    createInvite: async (label: string) => {
+      const { error } = await supabase.rpc("create_invite_by_token", { _token: token, _label: label || "" });
+      if (error) throw error;
+      await load();
+    },
+    deleteInvite: async (inviteId: string) => {
+      const { error } = await supabase.rpc("delete_invite_by_token", { _token: token, _invite_id: inviteId });
+      if (error) throw error;
+      await load();
+    },
     reload: load,
   };
 
