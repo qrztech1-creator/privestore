@@ -36,12 +36,16 @@ function BrideArea() {
     if (error || !ev) { setNotFound(true); setLoading(false); return; }
     setEvent(ev);
     const [{ data: ep }, { data: prods }, { data: ords }, { data: invs }] = await Promise.all([
-      supabase.from("event_products").select("*, product:products(*)").eq("event_id", ev.id).order("position"),
-      supabase.from("products").select("*").eq("active", true),
+      // SECURITY DEFINER RPC — works for the manage_token holder even when anon.
+      supabase.rpc("get_event_products_for_guest", { _event_id: (ev as any).id, _token: token }),
+      supabase.from("products").select("*, variants:product_variants(*), images:product_images(*)").eq("active", true),
       supabase.rpc("get_orders_by_token", { _token: token }),
-      supabase.from("event_invites").select("*").eq("event_id", ev.id).order("created_at", { ascending: false }),
+      supabase.rpc("list_invites_by_token", { _token: token }),
     ]);
-    setItems(ep || []); setProducts(prods || []); setOrders((ords as any) || []); setInvites(invs || []);
+    setItems(Array.isArray(ep) ? ep : []);
+    setProducts(prods || []);
+    setOrders((ords as any) || []);
+    setInvites((invs as any) || []);
     setLoading(false);
   }, [token]);
 
