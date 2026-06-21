@@ -617,6 +617,27 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_public_event_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          archived_at: string
+          banner_url: string
+          bride_name: string
+          event_date: string
+          id: string
+          message: string
+          owner_id: string
+          palette: Json
+          partner_name: string
+          playlist_url: string
+          slug: string
+          status: Database["public"]["Enums"]["event_status"]
+          thank_you_message: string
+          type: Database["public"]["Enums"]["event_type"]
+          visibility: Database["public"]["Enums"]["event_visibility"]
+          whatsapp_number: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -685,6 +706,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      validate_invite_token: {
+        Args: { _event_id: string; _token: string }
+        Returns: boolean
       }
     }
     Enums: {
