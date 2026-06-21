@@ -560,6 +560,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_invite_by_token: {
+        Args: { _label: string; _token: string }
+        Returns: {
+          created_at: string
+          event_id: string
+          guest_label: string | null
+          id: string
+          token: string
+          used_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "event_invites"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      delete_invite_by_token: {
+        Args: { _invite_id: string; _token: string }
+        Returns: undefined
+      }
       event_for_token: { Args: { _token: string }; Returns: string }
       get_event_by_token: {
         Args: { _token: string }
@@ -593,6 +614,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_event_products_for_guest: {
+        Args: { _event_id: string; _token: string }
+        Returns: Json
       }
       get_orders_by_token: {
         Args: { _token: string }
@@ -646,6 +671,23 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_invites_by_token: {
+        Args: { _token: string }
+        Returns: {
+          created_at: string
+          event_id: string
+          guest_label: string | null
+          id: string
+          token: string
+          used_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "event_invites"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       remove_event_product_by_token: {
         Args: { _ep_id: string; _token: string }
         Returns: undefined

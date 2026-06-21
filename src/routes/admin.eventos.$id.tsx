@@ -48,6 +48,17 @@ function AdminEventDetail() {
       await supabase.from("event_products").delete().eq("id", epId);
       await load();
     },
+    createInvite: async (label: string) => {
+      const token = (crypto.randomUUID?.() || Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).replace(/-/g, "");
+      const { error } = await supabase.from("event_invites").insert({ event_id: id, token, guest_label: label || null });
+      if (error) throw error;
+      await load();
+    },
+    deleteInvite: async (inviteId: string) => {
+      const { error } = await supabase.from("event_invites").delete().eq("id", inviteId);
+      if (error) throw error;
+      await load();
+    },
     reload: load,
   };
 

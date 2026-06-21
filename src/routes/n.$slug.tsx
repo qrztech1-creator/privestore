@@ -51,18 +51,24 @@ function PublicBride() {
       setEvent(ev);
       if (ev) {
         const isOwner = user && ev.owner_id === user.id;
+        let allowed = false;
         if (ev.visibility === "public" || isOwner || isAdmin) {
-          setAccessOk(true);
+          allowed = true;
         } else if (token) {
           const { data: ok } = await supabase.rpc("validate_invite_token", { _event_id: ev.id, _token: token });
-          setAccessOk(!!ok);
+          allowed = !!ok;
         }
-        const { data: ep } = await supabase
-          .from("event_products")
-          .select("*, product:products(*, images:product_images(*), variants:product_variants(*))")
-          .eq("event_id", ev.id)
-          .order("position");
-        setItems(ep || []);
+        setAccessOk(allowed);
+
+        if (allowed) {
+          // Use SECURITY DEFINER RPC that validates token/visibility and
+          // returns the full nested product (variants + images).
+          const { data: epData } = await supabase.rpc("get_event_products_for_guest", {
+            _event_id: ev.id,
+            _token: token ?? null,
+          });
+          setItems(Array.isArray(epData) ? epData : []);
+        }
       }
       setLoading(false);
       if (paid === "1") toast.success(ev?.thank_you_message || "Pagamento confirmado. Obrigada pelo carinho! 💝");
@@ -183,7 +189,7 @@ function CartFab({ eventId, onClick }: { eventId: string; onClick: () => void })
 function WishCard({ item, eventId, delay }: any) {
   const add = useCart((s) => s.add);
   const remaining = (item.desired_qty || 0) - (item.purchased_qty || 0);
-  const sold = remaining <= 0;
+  const giftSold = remaining <= 0;
   const p = item.product;
   if (!p) return null;
 
@@ -191,16 +197,16 @@ function WishCard({ item, eventId, delay }: any) {
   const images: any[] = p.images || [];
   const colors = Array.from(new Set(variants.map((v) => v.color_name).filter(Boolean))) as string[];
   const sizesByColor = (color: string | null) =>
-    Array.from(new Set(variants.filter((v) => !color || v.color_name === color).map((v) => v.size).filter(Boolean))) as string[];
+    Array.from(new Set(
+      variants.filter((v) => !color || v.color_name === color).map((v) => v.size).filter(Boolean)
+    )) as string[];
 
   const [color, setColor] = useState<string | null>(colors[0] || null);
   const [size, setSize] = useState<string | null>(null);
 
-  // pick image: prefer image matching color, fallback to general image, then primary
   const colorImages = color ? images.filter((i) => i.color_name === color) : [];
   const generalImages = images.filter((i) => !i.color_name);
-  const visibleImage =
-    colorImages[0]?.url || generalImages[0]?.url || p.image_url;
+  const visibleImage = colorImages[0]?.url || generalImages[0]?.url || p.image_url;
 
   const colorHex = (c: string) => variants.find((v) => v.color_name === c)?.color_hex || "#cccccc";
 
@@ -213,6 +219,15 @@ function WishCard({ item, eventId, delay }: any) {
   const needsSize = sizes.length > 0 && !size;
   const needsColor = colors.length > 0 && !color;
 
+  // stock from selected variant (null = não controlado)
+  const variantStock = selectedVariant?.stock;
+  const variantOutOfStock = variantStock !== null && variantStock !== undefined && variantStock <= 0;
+  const sold = giftSold || variantOutOfStock;
+  const maxQty = Math.min(
+    remaining > 0 ? remaining : 0,
+    variantStock != null ? Number(variantStock) : Number.POSITIVE_INFINITY
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -223,7 +238,9 @@ function WishCard({ item, eventId, delay }: any) {
     >
       <div className="aspect-square bg-secondary overflow-hidden relative">
         {visibleImage ? <img src={visibleImage} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
-        {sold && <div className="absolute inset-0 bg-background/70 flex items-center justify-center"><span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">Presenteado</span></div>}
+        {sold && <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+          <span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">{variantOutOfStock && !giftSold ? "Sem estoque" : "Presenteado"}</span>
+        </div>}
       </div>
       <div className="p-4 space-y-2">
         <h3 className="font-medium truncate">{p.name}</h3>
@@ -231,33 +248,47 @@ function WishCard({ item, eventId, delay }: any) {
 
         {colors.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            {colors.map((c) => (
-              <button
-                key={c}
-                onClick={() => { setColor(c); setSize(null); }}
-                title={c}
-                className={`w-6 h-6 rounded-full border-2 transition ${color === c ? "border-primary scale-110" : "border-border"}`}
-                style={{ background: colorHex(c) }}
-              />
-            ))}
+            {colors.map((c) => {
+              // available if any variant of this color has stock > 0 OR stock is null (uncontrolled)
+              const anyAvail = variants.some((v) => v.color_name === c && (v.stock == null || v.stock > 0));
+              return (
+                <button
+                  key={c}
+                  onClick={() => { setColor(c); setSize(null); }}
+                  title={c + (anyAvail ? "" : " (esgotado)")}
+                  disabled={!anyAvail}
+                  className={`w-6 h-6 rounded-full border-2 transition ${color === c ? "border-primary scale-110" : "border-border"} ${!anyAvail ? "opacity-30 line-through" : ""}`}
+                  style={{ background: colorHex(c) }}
+                />
+              );
+            })}
           </div>
         )}
 
         {sizes.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
-            {sizes.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSize(s)}
-                className={`text-[10px] uppercase px-2 py-0.5 rounded border transition ${size === s ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}
-              >
-                {s}
-              </button>
-            ))}
+            {sizes.map((s) => {
+              const sVariant = variants.find((v) => (!color || v.color_name === color) && v.size === s);
+              const sOut = sVariant && sVariant.stock != null && sVariant.stock <= 0;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setSize(s)}
+                  disabled={!!sOut}
+                  className={`text-[10px] uppercase px-2 py-0.5 rounded border transition ${size === s ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"} ${sOut ? "opacity-30 line-through" : ""}`}
+                >
+                  {s}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{remaining > 0 ? `${remaining} disponível${remaining > 1 ? "is" : ""}` : "esgotado"}</div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+          {giftSold ? "esgotado" : variantOutOfStock ? "sem estoque desta variação" :
+            (variantStock != null ? `${variantStock} em estoque · ` : "") +
+            `${remaining} disponível${remaining > 1 ? "is" : ""} na lista`}
+        </div>
         <Button
           size="sm"
           disabled={sold || needsColor || needsSize}
@@ -270,7 +301,7 @@ function WishCard({ item, eventId, delay }: any) {
               price: finalPrice,
               imageUrl: visibleImage,
               qty: 1,
-              maxQty: remaining,
+              maxQty: Number.isFinite(maxQty) ? Math.max(1, maxQty) : remaining,
               variantId: selectedVariant?.id || null,
               variantLabel: label,
             });
