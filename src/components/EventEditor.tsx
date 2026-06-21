@@ -24,6 +24,8 @@ export interface EventOps {
   addProduct: (productId: string) => Promise<void>;
   updateEventProduct: (id: string, patch: { desired_qty?: number; is_favorite?: boolean; position?: number }) => Promise<void>;
   removeEventProduct: (id: string) => Promise<void>;
+  createInvite: (label: string) => Promise<void>;
+  deleteInvite: (inviteId: string) => Promise<void>;
   reload: () => Promise<void>;
 }
 
@@ -80,7 +82,7 @@ export function EventEditor({
           <OrdersTab orders={orders} eventId={event.id} reload={ops.reload} canEdit={isAdminMode} />
         </TabsContent>
         <TabsContent value="invites" className="mt-6">
-          <InvitesTab event={event} invites={invites} reload={ops.reload} baseUrl={baseUrl} />
+          <InvitesTab event={event} invites={invites} ops={ops} baseUrl={baseUrl} />
         </TabsContent>
         {isAdminMode && (
           <TabsContent value="config" className="mt-6">
@@ -255,18 +257,25 @@ function OrdersTab({ orders, canEdit, reload }: any) {
   );
 }
 
-function InvitesTab({ event, invites, reload, baseUrl }: any) {
+function InvitesTab({ event, invites, ops, baseUrl }: any) {
   const [label, setLabel] = useState("");
+  const [busy, setBusy] = useState(false);
   async function create() {
-    const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-    await supabase.from("event_invites").insert({ event_id: event.id, token, guest_label: label || null });
-    setLabel(""); reload();
+    setBusy(true);
+    try { await ops.createInvite(label); setLabel(""); }
+    catch (e: any) { toast.error(e.message || "Erro ao gerar convite"); }
+    finally { setBusy(false); }
+  }
+  async function del(id: string) {
+    if (!confirm("Revogar este convite?")) return;
+    try { await ops.deleteInvite(id); toast.success("Convite revogado"); }
+    catch (e: any) { toast.error(e.message || "Erro ao revogar"); }
   }
   return (
     <div className="space-y-4">
       <div className="glass rounded-2xl p-4 flex gap-2">
         <Input placeholder="Nome da convidada (opcional)" value={label} onChange={(e) => setLabel(e.target.value)} />
-        <Button onClick={create}><Plus className="w-4 h-4 mr-1" />Gerar convite</Button>
+        <Button onClick={create} disabled={busy}><Plus className="w-4 h-4 mr-1" />Gerar convite</Button>
       </div>
       <div className="space-y-2">
         {invites.map((i: any) => {
@@ -278,6 +287,7 @@ function InvitesTab({ event, invites, reload, baseUrl }: any) {
                 <div className="text-xs text-muted-foreground truncate">{url}</div>
               </div>
               <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(url); toast.success("Copiado"); }}><Copy className="w-3 h-3" /></Button>
+              <Button size="sm" variant="ghost" onClick={() => del(i.id)}><Trash className="w-3 h-3" /></Button>
             </div>
           );
         })}
