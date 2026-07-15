@@ -354,12 +354,12 @@ function CartDialog({ open, onOpenChange, event }: any) {
       });
       setBusy(false);
       if (fnErr || !data?.url) return toast.error(fnErr?.message || "Falha ao iniciar pagamento");
-      cart.clear(event.id);
+      clearCart(event.id);
       window.location.href = data.url;
       return;
     }
 
-    cart.clear(event.id);
+    clearCart(event.id);
     setBusy(false);
     if (mode === "wa" && event.whatsapp_number) {
       const text = `Oi! Acabei de fazer um pedido para ${event.bride_name}:\n\n${items.map(i => `• ${i.qty}x ${i.name}`).join("\n")}\n\nTotal: R$ ${total.toFixed(2)}\nMeu nome: ${name}`;
@@ -385,10 +385,10 @@ function CartDialog({ open, onOpenChange, event }: any) {
                     <div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
                     <span className="w-6 text-center text-sm">{i.qty}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.remove(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeItem(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
                   </div>
                 </div>
               ))}
