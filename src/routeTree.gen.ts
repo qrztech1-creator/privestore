@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LojaRouteImport } from './routes/loja'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
@@ -23,6 +24,11 @@ import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminEventosIndexRouteImport } from './routes/admin.eventos.index'
 import { Route as AdminEventosIdRouteImport } from './routes/admin.eventos.$id'
 
+const LojaRoute = LojaRouteImport.update({
+  id: '/loja',
+  path: '/loja',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -92,6 +98,7 @@ const AdminEventosIdRoute = AdminEventosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/loja': typeof LojaRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/loja': typeof LojaRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/loja': typeof LojaRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/loja'
     | '/admin/categorias'
     | '/admin/linhas'
     | '/admin/pedidos'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/loja'
     | '/admin/categorias'
     | '/admin/linhas'
     | '/admin/pedidos'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/loja'
     | '/admin/categorias'
     | '/admin/linhas'
     | '/admin/pedidos'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  LojaRoute: typeof LojaRoute
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminLinhasRoute: typeof AdminLinhasRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
@@ -201,6 +214,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/loja': {
+      id: '/loja'
+      path: '/loja'
+      fullPath: '/loja'
+      preLoaderRoute: typeof LojaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -298,6 +318,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  LojaRoute: LojaRoute,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminLinhasRoute: AdminLinhasRoute,
   AdminPedidosRoute: AdminPedidosRoute,
