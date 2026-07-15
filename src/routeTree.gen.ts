@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as NSlugRouteImport } from './routes/n.$slug'
+import { Route as LojaCarrinhoRouteImport } from './routes/loja.carrinho'
 import { Route as GTokenRouteImport } from './routes/g.$token'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AdminProdutosRouteImport } from './routes/admin.produtos'
@@ -53,6 +54,11 @@ const NSlugRoute = NSlugRouteImport.update({
   id: '/n/$slug',
   path: '/n/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LojaCarrinhoRoute = LojaCarrinhoRouteImport.update({
+  id: '/carrinho',
+  path: '/carrinho',
+  getParentRoute: () => LojaRoute,
 } as any)
 const GTokenRoute = GTokenRouteImport.update({
   id: '/g/$token',
@@ -98,13 +104,14 @@ const AdminEventosIdRoute = AdminEventosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/loja': typeof LojaRoute
+  '/loja': typeof LojaRouteWithChildren
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/g/$token': typeof GTokenRoute
+  '/loja/carrinho': typeof LojaCarrinhoRoute
   '/n/$slug': typeof NSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
@@ -114,13 +121,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/loja': typeof LojaRoute
+  '/loja': typeof LojaRouteWithChildren
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/g/$token': typeof GTokenRoute
+  '/loja/carrinho': typeof LojaCarrinhoRoute
   '/n/$slug': typeof NSlugRoute
   '/admin': typeof AdminIndexRoute
   '/painel': typeof PainelIndexRoute
@@ -131,13 +139,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/loja': typeof LojaRoute
+  '/loja': typeof LojaRouteWithChildren
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
   '/admin/produtos': typeof AdminProdutosRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/g/$token': typeof GTokenRoute
+  '/loja/carrinho': typeof LojaCarrinhoRoute
   '/n/$slug': typeof NSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/': typeof PainelIndexRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/usuarios'
     | '/g/$token'
+    | '/loja/carrinho'
     | '/n/$slug'
     | '/admin/'
     | '/painel/'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/usuarios'
     | '/g/$token'
+    | '/loja/carrinho'
     | '/n/$slug'
     | '/admin'
     | '/painel'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/admin/produtos'
     | '/admin/usuarios'
     | '/g/$token'
+    | '/loja/carrinho'
     | '/n/$slug'
     | '/admin/'
     | '/painel/'
@@ -198,7 +210,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
-  LojaRoute: typeof LojaRoute
+  LojaRoute: typeof LojaRouteWithChildren
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminLinhasRoute: typeof AdminLinhasRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
@@ -255,6 +267,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/n/$slug'
       preLoaderRoute: typeof NSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/loja/carrinho': {
+      id: '/loja/carrinho'
+      path: '/carrinho'
+      fullPath: '/loja/carrinho'
+      preLoaderRoute: typeof LojaCarrinhoRouteImport
+      parentRoute: typeof LojaRoute
     }
     '/g/$token': {
       id: '/g/$token'
@@ -315,10 +334,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LojaRouteChildren {
+  LojaCarrinhoRoute: typeof LojaCarrinhoRoute
+}
+
+const LojaRouteChildren: LojaRouteChildren = {
+  LojaCarrinhoRoute: LojaCarrinhoRoute,
+}
+
+const LojaRouteWithChildren = LojaRoute._addFileChildren(LojaRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
-  LojaRoute: LojaRoute,
+  LojaRoute: LojaRouteWithChildren,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminLinhasRoute: AdminLinhasRoute,
   AdminPedidosRoute: AdminPedidosRoute,
