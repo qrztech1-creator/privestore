@@ -320,9 +320,12 @@ function WishCard({ item, eventId, delay }: any) {
 }
 
 function CartDialog({ open, onOpenChange, event }: any) {
-  const cart = useCart();
-  const items = cart.items[event.id] || [];
+  const items = useCart((s) => s.items[event.id] ?? EMPTY_CART);
+  const clearCart = useCart((s) => s.clear);
+  const setQty = useCart((s) => s.setQty);
+  const removeItem = useCart((s) => s.remove);
   const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
