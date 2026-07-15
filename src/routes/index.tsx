@@ -16,12 +16,14 @@ function Index() {
       <header className="absolute top-0 left-0 right-0 z-20 px-6 py-5 flex items-center justify-between">
         <Logo className="h-12" />
         <nav className="flex items-center gap-3">
+          <Button asChild variant="ghost"><Link to="/loja">Loja</Link></Button>
           {user ? (
             <Button asChild variant="ghost"><Link to={isAdmin ? "/admin" : "/painel"}>Meu painel</Link></Button>
           ) : (
             <Button asChild variant="ghost"><Link to="/login">Entrar</Link></Button>
           )}
         </nav>
+
       </header>
 
       {/* Hero */}
