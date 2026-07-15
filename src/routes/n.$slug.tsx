@@ -17,6 +17,23 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
   validateSearch: (s: Record<string, unknown>) => ({ t: (s.t as string) || undefined, paid: (s.paid as string) || undefined }),
+  errorComponent: ({ error, reset }) => (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="glass rounded-3xl p-10 max-w-md text-center space-y-4">
+        <h1 className="font-display text-3xl">Ops, algo deu errado</h1>
+        <p className="text-sm text-muted-foreground break-words">{error?.message || "Erro ao carregar a página."}</p>
+        <Button onClick={reset}>Tentar novamente</Button>
+      </div>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="glass rounded-3xl p-10 max-w-md text-center">
+        <h1 className="font-display text-3xl mb-2">Página não encontrada</h1>
+        <p className="text-sm text-muted-foreground">Verifique o link recebido.</p>
+      </div>
+    </div>
+  ),
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug} · Lista de presentes · Privê` },
@@ -26,6 +43,7 @@ export const Route = createFileRoute("/n/$slug")({
     ],
   }),
 });
+
 
 function PublicBride() {
   const { slug } = useParams({ from: "/n/$slug" });
@@ -171,8 +189,9 @@ function PublicBride() {
   );
 }
 
+const EMPTY_CART: any[] = [];
 function CartFab({ eventId, onClick }: { eventId: string; onClick: () => void }) {
-  const items = useCart((s) => s.items[eventId] || []);
+  const items = useCart((s) => s.items[eventId] ?? EMPTY_CART);
   const count = items.reduce((s, i) => s + i.qty, 0);
   return (
     <Button onClick={onClick} className="fixed bottom-6 right-6 z-30 rounded-full h-14 w-14 shadow-glow bg-gradient-to-r from-primary to-accent text-primary-foreground" size="icon">
@@ -185,6 +204,7 @@ function CartFab({ eventId, onClick }: { eventId: string; onClick: () => void })
     </Button>
   );
 }
+
 
 function WishCard({ item, eventId, delay }: any) {
   const add = useCart((s) => s.add);
@@ -318,9 +338,12 @@ function WishCard({ item, eventId, delay }: any) {
 }
 
 function CartDialog({ open, onOpenChange, event }: any) {
-  const cart = useCart();
-  const items = cart.items[event.id] || [];
+  const items = useCart((s) => s.items[event.id] ?? EMPTY_CART);
+  const clearCart = useCart((s) => s.clear);
+  const setQty = useCart((s) => s.setQty);
+  const removeItem = useCart((s) => s.remove);
   const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -349,12 +372,12 @@ function CartDialog({ open, onOpenChange, event }: any) {
       });
       setBusy(false);
       if (fnErr || !data?.url) return toast.error(fnErr?.message || "Falha ao iniciar pagamento");
-      cart.clear(event.id);
+      clearCart(event.id);
       window.location.href = data.url;
       return;
     }
 
-    cart.clear(event.id);
+    clearCart(event.id);
     setBusy(false);
     if (mode === "wa" && event.whatsapp_number) {
       const text = `Oi! Acabei de fazer um pedido para ${event.bride_name}:\n\n${items.map(i => `• ${i.qty}x ${i.name}`).join("\n")}\n\nTotal: R$ ${total.toFixed(2)}\nMeu nome: ${name}`;
@@ -380,10 +403,10 @@ function CartDialog({ open, onOpenChange, event }: any) {
                     <div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
                     <span className="w-6 text-center text-sm">{i.qty}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => cart.remove(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeItem(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
                   </div>
                 </div>
               ))}
