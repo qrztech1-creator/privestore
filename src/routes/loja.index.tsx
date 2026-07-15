@@ -10,7 +10,7 @@ import { Heart, ShoppingBag, Bell, Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-export const Route = createFileRoute("/loja")({
+export const Route = createFileRoute("/loja/")({
   component: LojaPage,
   head: () => ({
     meta: [
