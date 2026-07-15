@@ -17,6 +17,23 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
   validateSearch: (s: Record<string, unknown>) => ({ t: (s.t as string) || undefined, paid: (s.paid as string) || undefined }),
+  errorComponent: ({ error, reset }) => (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="glass rounded-3xl p-10 max-w-md text-center space-y-4">
+        <h1 className="font-display text-3xl">Ops, algo deu errado</h1>
+        <p className="text-sm text-muted-foreground break-words">{error?.message || "Erro ao carregar a página."}</p>
+        <Button onClick={reset}>Tentar novamente</Button>
+      </div>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="glass rounded-3xl p-10 max-w-md text-center">
+        <h1 className="font-display text-3xl mb-2">Página não encontrada</h1>
+        <p className="text-sm text-muted-foreground">Verifique o link recebido.</p>
+      </div>
+    </div>
+  ),
   head: ({ params }) => ({
     meta: [
       { title: `${params.slug} · Lista de presentes · Privê` },
@@ -26,6 +43,7 @@ export const Route = createFileRoute("/n/$slug")({
     ],
   }),
 });
+
 
 function PublicBride() {
   const { slug } = useParams({ from: "/n/$slug" });
