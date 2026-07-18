@@ -147,10 +147,11 @@ function CarrinhoPage() {
               </div>
               <Textarea placeholder="Observações" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
             </div>
-            <Button disabled={busy} onClick={checkout} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground">
-              {busy ? "Enviando..." : "Fazer pedido"}
+            <Button disabled={busy} onClick={checkout} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white">
+              <MessageCircle className="w-4 h-4 mr-2" />{busy ? "Enviando..." : "Finalizar no WhatsApp"}
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center">Após o pedido, entraremos em contato para combinar o pagamento.</p>
+            <p className="text-[10px] text-muted-foreground text-center">O pedido é registrado no sistema e enviado para a loja pelo WhatsApp com todos os detalhes.</p>
+
           </aside>
         )}
       </div>
