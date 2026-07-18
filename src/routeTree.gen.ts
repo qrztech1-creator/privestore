@@ -24,6 +24,7 @@ import { Route as AdminLinhasRouteImport } from './routes/admin.linhas'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminEventosIndexRouteImport } from './routes/admin.eventos.index'
 import { Route as AdminEventosIdRouteImport } from './routes/admin.eventos.$id'
+import { Route as ApiPublicWebhooksInfinitepayRouteImport } from './routes/api.public.webhooks.infinitepay'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -100,6 +101,12 @@ const AdminEventosIdRoute = AdminEventosIdRouteImport.update({
   path: '/admin/eventos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksInfinitepayRoute =
+  ApiPublicWebhooksInfinitepayRouteImport.update({
+    id: '/api/public/webhooks/infinitepay',
+    path: '/api/public/webhooks/infinitepay',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/painel/': typeof PainelIndexRoute
   '/admin/eventos/$id': typeof AdminEventosIdRoute
   '/admin/eventos/': typeof AdminEventosIndexRoute
+  '/api/public/webhooks/infinitepay': typeof ApiPublicWebhooksInfinitepayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/painel': typeof PainelIndexRoute
   '/admin/eventos/$id': typeof AdminEventosIdRoute
   '/admin/eventos': typeof AdminEventosIndexRoute
+  '/api/public/webhooks/infinitepay': typeof ApiPublicWebhooksInfinitepayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/painel/': typeof PainelIndexRoute
   '/admin/eventos/$id': typeof AdminEventosIdRoute
   '/admin/eventos/': typeof AdminEventosIndexRoute
+  '/api/public/webhooks/infinitepay': typeof ApiPublicWebhooksInfinitepayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/painel/'
     | '/admin/eventos/$id'
     | '/admin/eventos/'
+    | '/api/public/webhooks/infinitepay'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/painel'
     | '/admin/eventos/$id'
     | '/admin/eventos'
+    | '/api/public/webhooks/infinitepay'
   id:
     | '__root__'
     | '/'
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
     | '/painel/'
     | '/admin/eventos/$id'
     | '/admin/eventos/'
+    | '/api/public/webhooks/infinitepay'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +236,7 @@ export interface RootRouteChildren {
   PainelIndexRoute: typeof PainelIndexRoute
   AdminEventosIdRoute: typeof AdminEventosIdRoute
   AdminEventosIndexRoute: typeof AdminEventosIndexRoute
+  ApiPublicWebhooksInfinitepayRoute: typeof ApiPublicWebhooksInfinitepayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -332,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/infinitepay': {
+      id: '/api/public/webhooks/infinitepay'
+      path: '/api/public/webhooks/infinitepay'
+      fullPath: '/api/public/webhooks/infinitepay'
+      preLoaderRoute: typeof ApiPublicWebhooksInfinitepayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -351,7 +372,17 @@ const rootRouteChildren: RootRouteChildren = {
   PainelIndexRoute: PainelIndexRoute,
   AdminEventosIdRoute: AdminEventosIdRoute,
   AdminEventosIndexRoute: AdminEventosIndexRoute,
+  ApiPublicWebhooksInfinitepayRoute: ApiPublicWebhooksInfinitepayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
