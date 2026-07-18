@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Trash } from "lucide-react";
+import { ArrowLeft, MessageCircle, Minus, Plus, Trash } from "lucide-react";
+
+// TODO: substituir pelo WhatsApp da loja (formato: DDI+DDD+número, só dígitos)
+// Também pode ser sobrescrito com a env VITE_STORE_WHATSAPP.
+const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
 
 export const Route = createFileRoute("/loja/carrinho")({
   component: CarrinhoPage,
@@ -16,6 +20,7 @@ export const Route = createFileRoute("/loja/carrinho")({
     meta: [{ title: "Carrinho — Loja Privê" }, { name: "robots", content: "noindex" }],
   }),
 });
+
 
 function CarrinhoPage() {
   const { user } = useAuth();
@@ -54,11 +59,36 @@ function CarrinhoPage() {
       variant_label: i.variantLabel || null, qty: i.qty, unit_price: i.price,
     })));
     if (itemErr) { setBusy(false); return toast.error(itemErr.message); }
+
+    // Monta mensagem detalhada para o WhatsApp da loja
+    const linhas = items.map((i) => {
+      const label = i.variantLabel ? ` (${i.variantLabel})` : "";
+      return `• ${i.qty}× ${i.name}${label} — R$ ${(i.price * i.qty).toFixed(2)}`;
+    }).join("\n");
+    const enderecoLinhas = [
+      address && `Endereço: ${address}`,
+      (city || state) && `Cidade/UF: ${city || "-"}/${state || "-"}`,
+      zip && `CEP: ${zip}`,
+    ].filter(Boolean).join("\n");
+    const texto =
+      `*Novo pedido — Loja Privê*\n\n` +
+      `*Pedido:* ${order.id.slice(0, 8).toUpperCase()}\n` +
+      `*Cliente:* ${name}\n` +
+      `*Email:* ${email}\n` +
+      (phone ? `*WhatsApp:* ${phone}\n` : "") +
+      (enderecoLinhas ? `\n${enderecoLinhas}\n` : "") +
+      `\n*Itens:*\n${linhas}\n\n` +
+      `*Total: R$ ${total.toFixed(2)}*\n` +
+      (msg ? `\n_Observações:_ ${msg}\n` : "") +
+      `\nAguardo instruções para pagamento. 💝`;
+
     clear();
     setBusy(false);
-    toast.success("Pedido registrado! Entraremos em contato para pagamento.");
+    toast.success("Pedido registrado! Abrindo WhatsApp...");
+    window.open(`https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`, "_blank");
     navigate({ to: "/loja" });
   }
+
 
   return (
     <div className="min-h-screen">
@@ -117,10 +147,11 @@ function CarrinhoPage() {
               </div>
               <Textarea placeholder="Observações" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
             </div>
-            <Button disabled={busy} onClick={checkout} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground">
-              {busy ? "Enviando..." : "Fazer pedido"}
+            <Button disabled={busy} onClick={checkout} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white">
+              <MessageCircle className="w-4 h-4 mr-2" />{busy ? "Enviando..." : "Finalizar no WhatsApp"}
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center">Após o pedido, entraremos em contato para combinar o pagamento.</p>
+            <p className="text-[10px] text-muted-foreground text-center">O pedido é registrado no sistema e enviado para a loja pelo WhatsApp com todos os detalhes.</p>
+
           </aside>
         )}
       </div>
