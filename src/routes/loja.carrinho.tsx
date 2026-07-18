@@ -59,11 +59,36 @@ function CarrinhoPage() {
       variant_label: i.variantLabel || null, qty: i.qty, unit_price: i.price,
     })));
     if (itemErr) { setBusy(false); return toast.error(itemErr.message); }
+
+    // Monta mensagem detalhada para o WhatsApp da loja
+    const linhas = items.map((i) => {
+      const label = i.variantLabel ? ` (${i.variantLabel})` : "";
+      return `• ${i.qty}× ${i.name}${label} — R$ ${(i.price * i.qty).toFixed(2)}`;
+    }).join("\n");
+    const enderecoLinhas = [
+      address && `Endereço: ${address}`,
+      (city || state) && `Cidade/UF: ${city || "-"}/${state || "-"}`,
+      zip && `CEP: ${zip}`,
+    ].filter(Boolean).join("\n");
+    const texto =
+      `*Novo pedido — Loja Privê*\n\n` +
+      `*Pedido:* ${order.id.slice(0, 8).toUpperCase()}\n` +
+      `*Cliente:* ${name}\n` +
+      `*Email:* ${email}\n` +
+      (phone ? `*WhatsApp:* ${phone}\n` : "") +
+      (enderecoLinhas ? `\n${enderecoLinhas}\n` : "") +
+      `\n*Itens:*\n${linhas}\n\n` +
+      `*Total: R$ ${total.toFixed(2)}*\n` +
+      (msg ? `\n_Observações:_ ${msg}\n` : "") +
+      `\nAguardo instruções para pagamento. 💝`;
+
     clear();
     setBusy(false);
-    toast.success("Pedido registrado! Entraremos em contato para pagamento.");
+    toast.success("Pedido registrado! Abrindo WhatsApp...");
+    window.open(`https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`, "_blank");
     navigate({ to: "/loja" });
   }
+
 
   return (
     <div className="min-h-screen">
