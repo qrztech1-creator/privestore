@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Trash } from "lucide-react";
+import { ArrowLeft, MessageCircle, Minus, Plus, Trash } from "lucide-react";
+
+// TODO: substituir pelo WhatsApp da loja (formato: DDI+DDD+número, só dígitos)
+// Também pode ser sobrescrito com a env VITE_STORE_WHATSAPP.
+const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
 
 export const Route = createFileRoute("/loja/carrinho")({
   component: CarrinhoPage,
@@ -16,6 +20,7 @@ export const Route = createFileRoute("/loja/carrinho")({
     meta: [{ title: "Carrinho — Loja Privê" }, { name: "robots", content: "noindex" }],
   }),
 });
+
 
 function CarrinhoPage() {
   const { user } = useAuth();
