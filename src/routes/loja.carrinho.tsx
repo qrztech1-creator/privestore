@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, MessageCircle, Minus, Plus, Trash } from "lucide-react";
+import { ArrowLeft, MessageCircle, Minus, Plus, Trash, QrCode, CreditCard, Copy } from "lucide-react";
+import pixQr from "@/assets/pix-qr.jpeg";
 
-// TODO: substituir pelo WhatsApp da loja (formato: DDI+DDD+número, só dígitos)
-// Também pode ser sobrescrito com a env VITE_STORE_WHATSAPP.
+// WhatsApp da loja (formato: DDI+DDD+número, só dígitos)
+// Pode ser sobrescrito com a env VITE_STORE_WHATSAPP.
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
 
 export const Route = createFileRoute("/loja/carrinho")({
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/loja/carrinho")({
   }),
 });
 
+type PayMethod = "pix" | "card" | "whatsapp";
 
 function CarrinhoPage() {
   const { user } = useAuth();
@@ -39,7 +41,9 @@ function CarrinhoPage() {
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [msg, setMsg] = useState("");
+  const [method, setMethod] = useState<PayMethod>("pix");
   const [busy, setBusy] = useState(false);
+  const [pixOrderId, setPixOrderId] = useState<string | null>(null);
 
   async function checkout() {
     if (items.length === 0) return;
@@ -51,6 +55,7 @@ function CarrinhoPage() {
       address_line: address || null, address_city: city || null,
       address_state: state || null, address_zip: zip || null,
       message: msg || null, total, status: "pending",
+      payment_provider: method,
     }).select().single();
     if (error) { setBusy(false); return toast.error(error.message); }
     const { error: itemErr } = await supabase.from("shop_order_items").insert(items.map((i) => ({
@@ -60,7 +65,6 @@ function CarrinhoPage() {
     })));
     if (itemErr) { setBusy(false); return toast.error(itemErr.message); }
 
-    // Monta mensagem detalhada para o WhatsApp da loja
     const linhas = items.map((i) => {
       const label = i.variantLabel ? ` (${i.variantLabel})` : "";
       return `• ${i.qty}× ${i.name}${label} — R$ ${(i.price * i.qty).toFixed(2)}`;
@@ -70,25 +74,46 @@ function CarrinhoPage() {
       (city || state) && `Cidade/UF: ${city || "-"}/${state || "-"}`,
       zip && `CEP: ${zip}`,
     ].filter(Boolean).join("\n");
+    const metodoLabel = method === "pix" ? "PIX (envio comprovante)" : method === "card" ? "Cartão" : "Combinar no WhatsApp";
     const texto =
       `*Novo pedido — Loja Privê*\n\n` +
       `*Pedido:* ${order.id.slice(0, 8).toUpperCase()}\n` +
       `*Cliente:* ${name}\n` +
       `*Email:* ${email}\n` +
       (phone ? `*WhatsApp:* ${phone}\n` : "") +
+      `*Forma de pagamento:* ${metodoLabel}\n` +
       (enderecoLinhas ? `\n${enderecoLinhas}\n` : "") +
       `\n*Itens:*\n${linhas}\n\n` +
       `*Total: R$ ${total.toFixed(2)}*\n` +
       (msg ? `\n_Observações:_ ${msg}\n` : "") +
-      `\nAguardo instruções para pagamento. 💝`;
+      (method === "pix"
+        ? `\n💠 Paguei via PIX — segue o comprovante em anexo.`
+        : `\nAguardo instruções para pagamento. 💝`);
+
+    const waUrl = `https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`;
+
+    if (method === "pix") {
+      // Não limpa carrinho ainda — mostra QR e só limpa quando abrir WhatsApp
+      setPixOrderId(order.id);
+      setBusy(false);
+      toast.success("Pedido registrado! Escaneie o QR do PIX e envie o comprovante no WhatsApp.");
+      (window as any).__prive_wa = waUrl;
+      return;
+    }
 
     clear();
     setBusy(false);
     toast.success("Pedido registrado! Abrindo WhatsApp...");
-    window.open(`https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`, "_blank");
+    window.open(waUrl, "_blank");
     navigate({ to: "/loja" });
   }
 
+  function openWhatsappAfterPix() {
+    const url = (window as any).__prive_wa;
+    clear();
+    window.open(url, "_blank");
+    navigate({ to: "/loja" });
+  }
 
   return (
     <div className="min-h-screen">
@@ -102,10 +127,23 @@ function CarrinhoPage() {
       <div className="max-w-4xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_400px] gap-6">
         <div>
           <h1 className="font-display text-3xl mb-4">Seu carrinho</h1>
-          {items.length === 0 ? (
+          {items.length === 0 && !pixOrderId ? (
             <div className="glass rounded-2xl p-10 text-center">
               <p className="text-muted-foreground mb-4">Carrinho vazio.</p>
               <Link to="/loja"><Button>Ir para a loja</Button></Link>
+            </div>
+          ) : pixOrderId ? (
+            <div className="glass rounded-2xl p-6 text-center space-y-4">
+              <h2 className="font-display text-2xl">Pague com PIX</h2>
+              <p className="text-sm text-muted-foreground">Escaneie o QR abaixo no app do seu banco. Depois clique no botão para enviar o comprovante pelo WhatsApp — assim liberamos o envio.</p>
+              <img src={pixQr} alt="QR Code PIX" className="w-64 h-64 mx-auto rounded-xl bg-white p-3" />
+              <div className="text-xs text-muted-foreground">
+                Total: <span className="text-primary font-display text-lg">R$ {total.toFixed(2)}</span>
+              </div>
+              <Button onClick={openWhatsappAfterPix} className="bg-[#25D366] hover:bg-[#1faa55] text-white w-full">
+                <MessageCircle className="w-4 h-4 mr-2" />Já paguei — enviar comprovante
+              </Button>
+              <p className="text-[10px] text-muted-foreground">Sem o comprovante o pedido não é despachado.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -129,7 +167,7 @@ function CarrinhoPage() {
           )}
         </div>
 
-        {items.length > 0 && (
+        {items.length > 0 && !pixOrderId && (
           <aside className="glass rounded-2xl p-5 h-fit lg:sticky lg:top-24 space-y-3">
             <h2 className="font-display text-2xl">Finalizar</h2>
             <div className="flex justify-between font-display text-xl">
@@ -147,11 +185,32 @@ function CarrinhoPage() {
               </div>
               <Textarea placeholder="Observações" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
             </div>
-            <Button disabled={busy} onClick={checkout} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white">
-              <MessageCircle className="w-4 h-4 mr-2" />{busy ? "Enviando..." : "Finalizar no WhatsApp"}
-            </Button>
-            <p className="text-[10px] text-muted-foreground text-center">O pedido é registrado no sistema e enviado para a loja pelo WhatsApp com todos os detalhes.</p>
 
+            <div className="pt-1">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Forma de pagamento</div>
+              <div className="grid grid-cols-3 gap-1">
+                <button type="button" onClick={() => setMethod("pix")} className={`text-xs rounded-lg border px-2 py-2 flex flex-col items-center gap-1 ${method === "pix" ? "border-primary bg-primary/10" : "border-border/40"}`}>
+                  <QrCode className="w-4 h-4" />PIX
+                </button>
+                <button type="button" onClick={() => setMethod("card")} className={`text-xs rounded-lg border px-2 py-2 flex flex-col items-center gap-1 ${method === "card" ? "border-primary bg-primary/10" : "border-border/40"}`}>
+                  <CreditCard className="w-4 h-4" />Cartão
+                </button>
+                <button type="button" onClick={() => setMethod("whatsapp")} className={`text-xs rounded-lg border px-2 py-2 flex flex-col items-center gap-1 ${method === "whatsapp" ? "border-primary bg-primary/10" : "border-border/40"}`}>
+                  <MessageCircle className="w-4 h-4" />Combinar
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                {method === "pix" && "Pague com PIX escaneando o QR e envie o comprovante no WhatsApp."}
+                {method === "card" && "Finalizamos o cartão pelo WhatsApp — enviaremos o link de pagamento."}
+                {method === "whatsapp" && "Combinamos a forma de pagamento diretamente no WhatsApp."}
+              </p>
+            </div>
+
+            <Button disabled={busy} onClick={checkout} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {busy ? "Enviando..." : method === "pix" ? "Gerar PIX e ir ao WhatsApp" : "Finalizar no WhatsApp"}
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center">O pedido é registrado no sistema. A loja atualiza o status (pago, enviado, entregue) no painel.</p>
           </aside>
         )}
       </div>
