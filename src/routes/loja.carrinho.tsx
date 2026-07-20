@@ -210,7 +210,7 @@ function CarrinhoPage() {
               <MessageCircle className="w-4 h-4 mr-2" />
               {busy ? "Enviando..." : method === "pix" ? "Gerar PIX e ir ao WhatsApp" : "Finalizar no WhatsApp"}
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center">O pedido é registrado no sistema. A loja atualiza o status (pago, enviado, entregue) no painel.</p>
+            
           </aside>
         )}
       </div>
