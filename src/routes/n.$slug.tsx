@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/lib/cart";
 import { Heart, Plus, Minus, ShoppingBag, Share2, MessageCircle, Lock, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
