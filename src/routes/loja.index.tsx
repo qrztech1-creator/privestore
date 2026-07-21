@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
 
@@ -407,13 +408,15 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, user }: any) {
   const colors = Array.from(new Set(variants.map((v) => v.color_name).filter(Boolean))) as string[];
   const [color, setColor] = useState<string | null>(colors[0] || null);
   const [size, setSize] = useState<string | null>(null);
-  const sizes = Array.from(new Set(variants.filter((v) => !color || v.color_name === color).map((v) => v.size).filter(Boolean))) as string[];
+  const dbSizes = Array.from(new Set(variants.filter((v) => !color || v.color_name === color).map((v) => v.size).filter(Boolean))) as string[];
+  const sizes = dbSizes.length > 0 ? dbSizes : [...DEFAULT_SIZES];
+  const sizesFromDb = dbSizes.length > 0;
 
   const colorImages = color ? images.filter((i) => i.color_name === color) : [];
   const generalImages = images.filter((i) => !i.color_name);
   const img = colorImages[0]?.url || generalImages[0]?.url || product.image_url;
 
-  const selectedVariant = variants.find((v) => (!color || v.color_name === color) && (!size || v.size === size));
+  const selectedVariant = variants.find((v) => (!color || v.color_name === color) && (!sizesFromDb || !size || v.size === size));
   const price = Number(selectedVariant?.price_override ?? product.price);
   const stock = selectedVariant?.stock;
   const outOfStock = stock != null && stock <= 0;
@@ -464,7 +467,7 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, user }: any) {
         {sizes.length > 0 && (
           <div className="flex gap-1 flex-wrap">
             {sizes.map((s) => {
-              const sv = variants.find((v) => (!color || v.color_name === color) && v.size === s);
+              const sv = sizesFromDb ? variants.find((v) => (!color || v.color_name === color) && v.size === s) : null;
               const so = sv && sv.stock != null && sv.stock <= 0;
               return (
                 <button key={s} onClick={() => setSize(s)} disabled={!!so}

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCart } from "@/lib/cart";
 import { Heart, Plus, Minus, ShoppingBag, Share2, MessageCircle, Lock, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
@@ -230,11 +231,14 @@ function WishCard({ item, eventId, delay }: any) {
 
   const colorHex = (c: string) => variants.find((v) => v.color_name === c)?.color_hex || "#cccccc";
 
+  const dbSizes = sizesByColor(color);
+  const sizesFromDb = dbSizes.length > 0;
+  const sizes = sizesFromDb ? dbSizes : [...DEFAULT_SIZES];
+
   const selectedVariant = variants.find(
-    (v) => (!color || v.color_name === color) && (!size || v.size === size)
+    (v) => (!color || v.color_name === color) && (!sizesFromDb || !size || v.size === size)
   );
   const finalPrice = Number(selectedVariant?.price_override ?? p.price);
-  const sizes = sizesByColor(color);
 
   const needsSize = sizes.length > 0 && !size;
   const needsColor = colors.length > 0 && !color;
@@ -288,7 +292,7 @@ function WishCard({ item, eventId, delay }: any) {
         {sizes.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
             {sizes.map((s) => {
-              const sVariant = variants.find((v) => (!color || v.color_name === color) && v.size === s);
+              const sVariant = sizesFromDb ? variants.find((v) => (!color || v.color_name === color) && v.size === s) : null;
               const sOut = sVariant && sVariant.stock != null && sVariant.stock <= 0;
               return (
                 <button
