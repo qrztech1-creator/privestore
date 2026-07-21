@@ -292,7 +292,7 @@ function WishCard({ item, eventId, delay }: any) {
         {sizes.length > 0 && (
           <div className="flex items-center gap-1 flex-wrap">
             {sizes.map((s) => {
-              const sVariant = variants.find((v) => (!color || v.color_name === color) && v.size === s);
+              const sVariant = sizesFromDb ? variants.find((v) => (!color || v.color_name === color) && v.size === s) : null;
               const sOut = sVariant && sVariant.stock != null && sVariant.stock <= 0;
               return (
                 <button
