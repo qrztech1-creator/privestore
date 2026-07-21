@@ -467,7 +467,7 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, user }: any) {
         {sizes.length > 0 && (
           <div className="flex gap-1 flex-wrap">
             {sizes.map((s) => {
-              const sv = variants.find((v) => (!color || v.color_name === color) && v.size === s);
+              const sv = sizesFromDb ? variants.find((v) => (!color || v.color_name === color) && v.size === s) : null;
               const so = sv && sv.stock != null && sv.stock <= 0;
               return (
                 <button key={s} onClick={() => setSize(s)} disabled={!!so}
