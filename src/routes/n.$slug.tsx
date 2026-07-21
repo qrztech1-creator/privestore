@@ -231,11 +231,14 @@ function WishCard({ item, eventId, delay }: any) {
 
   const colorHex = (c: string) => variants.find((v) => v.color_name === c)?.color_hex || "#cccccc";
 
+  const dbSizes = sizesByColor(color);
+  const sizesFromDb = dbSizes.length > 0;
+  const sizes = sizesFromDb ? dbSizes : [...DEFAULT_SIZES];
+
   const selectedVariant = variants.find(
-    (v) => (!color || v.color_name === color) && (!size || v.size === size)
+    (v) => (!color || v.color_name === color) && (!sizesFromDb || !size || v.size === size)
   );
   const finalPrice = Number(selectedVariant?.price_override ?? p.price);
-  const sizes = sizesByColor(color);
 
   const needsSize = sizes.length > 0 && !size;
   const needsColor = colors.length > 0 && !color;
