@@ -320,7 +320,7 @@ function LojaPage() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {featured.map((p, i) => (
-                <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} user={user} />
+                <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} onOpen={() => setModalProduct(p)} user={user} />
               ))}
             </div>
           </div>
