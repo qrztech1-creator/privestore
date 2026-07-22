@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useShopCart } from "@/lib/shopCart";
@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
+import { ProductModal } from "@/components/ProductModal";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
 
