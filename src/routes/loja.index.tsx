@@ -502,12 +502,28 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
   return (
     <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay }} className="bg-card rounded-2xl overflow-hidden group border border-border/40 hover:border-primary/40 hover:shadow-xl transition">
       <div className="aspect-[4/5] bg-secondary overflow-hidden relative">
-        {img ? <img src={img} alt={product.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
-        <button onClick={onToggleFav} className="absolute top-2 right-2 bg-background/80 backdrop-blur rounded-full p-2 hover:scale-110 transition">
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Abrir ${product.name}`}
+          className="absolute inset-0 w-full h-full block group/img cursor-zoom-in"
+        >
+          {img ? (
+            <img
+              src={img}
+              alt={product.name}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
+        </button>
+        <button onClick={onToggleFav} className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur rounded-full p-2 hover:scale-110 transition">
           <Heart className={`w-4 h-4 ${isFavorite ? "fill-primary text-primary" : "text-muted-foreground"}`} />
         </button>
         {outOfStock && (
-          <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/70 flex items-center justify-center pointer-events-none">
             <span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">Esgotado</span>
           </div>
         )}
