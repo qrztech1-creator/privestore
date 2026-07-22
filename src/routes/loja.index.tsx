@@ -43,9 +43,12 @@ function LojaPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [lineFilter, setLineFilter] = useState<string>("all");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [modalProduct, setModalProduct] = useState<any | null>(null);
   const cartCount = useShopCart((s) => s.items.reduce((a, b) => a + b.qty, 0));
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +62,14 @@ function LojaPage() {
     })();
   }, [user]);
 
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!searchWrapRef.current?.contains(e.target as Node)) setSearchOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
   const lines = useMemo(() => {
     const map = new Map<string, string>();
     products.forEach((p) => p.line_id && p.line_name && map.set(p.line_id, p.line_name));
@@ -68,10 +79,20 @@ function LojaPage() {
   const filtered = useMemo(() => {
     return products.filter((p) => {
       if (lineFilter !== "all" && p.line_id !== lineFilter) return false;
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [products, search, lineFilter]);
+  }, [products, lineFilter]);
+
+  const searchResults = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return products
+      .filter((p) => {
+        const hay = `${p.name || ""} ${p.line_name || ""} ${p.category_name || ""}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 8);
+  }, [products, search]);
 
   const featured = useMemo(() => products.slice(0, 4), [products]);
 
