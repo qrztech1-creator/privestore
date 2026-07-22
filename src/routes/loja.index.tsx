@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useShopCart } from "@/lib/shopCart";
@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
+import { ProductModal } from "@/components/ProductModal";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
 
@@ -42,9 +43,12 @@ function LojaPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [lineFilter, setLineFilter] = useState<string>("all");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [modalProduct, setModalProduct] = useState<any | null>(null);
   const cartCount = useShopCart((s) => s.items.reduce((a, b) => a + b.qty, 0));
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -58,6 +62,14 @@ function LojaPage() {
     })();
   }, [user]);
 
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!searchWrapRef.current?.contains(e.target as Node)) setSearchOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
   const lines = useMemo(() => {
     const map = new Map<string, string>();
     products.forEach((p) => p.line_id && p.line_name && map.set(p.line_id, p.line_name));
@@ -67,10 +79,20 @@ function LojaPage() {
   const filtered = useMemo(() => {
     return products.filter((p) => {
       if (lineFilter !== "all" && p.line_id !== lineFilter) return false;
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [products, search, lineFilter]);
+  }, [products, lineFilter]);
+
+  const searchResults = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return products
+      .filter((p) => {
+        const hay = `${p.name || ""} ${p.line_name || ""} ${p.category_name || ""}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 8);
+  }, [products, search]);
 
   const featured = useMemo(() => products.slice(0, 4), [products]);
 
@@ -109,9 +131,44 @@ function LojaPage() {
             <a href="#destaques" className="hover:text-primary transition">Destaques</a>
             <a href="#historia" className="hover:text-primary transition">Sobre</a>
           </nav>
-          <div className="flex-1 relative max-w-xs ml-auto">
+          <div ref={searchWrapRef} className="flex-1 relative max-w-xs ml-auto">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar peças..." className="pl-9 h-9 bg-secondary/60 border-border/50" />
+            <Input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              placeholder="Buscar peças..."
+              className="pl-9 h-9 bg-secondary/60 border-border/50"
+            />
+            {searchOpen && search.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-xl shadow-2xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+                {searchResults.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">Nada encontrado para "{search}"</div>
+                ) : (
+                  <ul className="py-1">
+                    {searchResults.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => { setModalProduct(p); setSearchOpen(false); setSearch(""); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary/60 text-left transition"
+                        >
+                          <div className="w-12 h-14 rounded-md bg-secondary overflow-hidden shrink-0">
+                            {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{p.name}</div>
+                            <div className="text-[10px] uppercase tracking-widest text-muted-foreground truncate">
+                              {p.line_name || p.category_name || "Coleção"}
+                            </div>
+                          </div>
+                          <div className="text-primary text-sm font-display shrink-0">R$ {Number(p.price).toFixed(2)}</div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           <Link to="/loja/carrinho">
             <Button variant="outline" size="sm" className="relative border-border/60">
@@ -263,7 +320,7 @@ function LojaPage() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {featured.map((p, i) => (
-                <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} user={user} />
+                <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} onOpen={() => setModalProduct(p)} user={user} />
               ))}
             </div>
           </div>
@@ -301,19 +358,18 @@ function LojaPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((p, i) => (
-              <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} user={user} />
+              <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} onOpen={() => setModalProduct(p)} user={user} />
             ))}
           </div>
         )}
       </section>
 
       {/* História / CTA band */}
-      <section id="historia" className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-primary" />
-        <div className="absolute inset-0 -z-10 opacity-25" style={{
+      <section id="historia" className="relative overflow-hidden bg-primary">
+        <div className="absolute inset-0 opacity-25 pointer-events-none" style={{
           backgroundImage: "radial-gradient(circle at 20% 30%, oklch(0.74 0.10 70 / 0.6), transparent 40%), radial-gradient(circle at 80% 70%, oklch(0.78 0.075 35 / 0.5), transparent 45%)",
         }} />
-        <div className="max-w-6xl mx-auto px-4 py-20 text-center text-primary-foreground">
+        <div className="relative max-w-6xl mx-auto px-4 py-20 text-center text-primary-foreground">
           <div className="text-[11px] uppercase tracking-[0.3em] opacity-70 mb-4">Nossa história</div>
           <h2 className="font-display text-4xl sm:text-6xl leading-tight max-w-3xl mx-auto mb-6">
             Cada peça nasce de um <em className="italic">ritual</em> — de mãos que costuram devagar.
@@ -328,7 +384,7 @@ function LojaPage() {
               </Button>
             </a>
             <a href="#colecoes">
-              <Button size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10 px-8 h-12 tracking-wider uppercase text-xs">
+              <Button size="lg" variant="outline" className="border-primary-foreground/50 bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary px-8 h-12 tracking-wider uppercase text-xs">
                 Explorar coleção
               </Button>
             </a>
@@ -397,11 +453,20 @@ function LojaPage() {
         <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30" />
         <MessageCircle className="w-6 h-6 relative" />
       </a>
+
+      <ProductModal
+        product={modalProduct}
+        open={!!modalProduct}
+        onClose={() => setModalProduct(null)}
+        isFavorite={modalProduct ? favorites.has(modalProduct.id) : false}
+        onToggleFav={() => modalProduct && toggleFav(modalProduct.id)}
+        user={user}
+      />
     </div>
   );
 }
 
-function ShopCard({ product, delay, isFavorite, onToggleFav, user }: any) {
+function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any) {
   const add = useShopCart((s) => s.add);
   const variants: any[] = product.variants || [];
   const images: any[] = product.images || [];
@@ -437,12 +502,28 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, user }: any) {
   return (
     <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay }} className="bg-card rounded-2xl overflow-hidden group border border-border/40 hover:border-primary/40 hover:shadow-xl transition">
       <div className="aspect-[4/5] bg-secondary overflow-hidden relative">
-        {img ? <img src={img} alt={product.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
-        <button onClick={onToggleFav} className="absolute top-2 right-2 bg-background/80 backdrop-blur rounded-full p-2 hover:scale-110 transition">
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Abrir ${product.name}`}
+          className="absolute inset-0 w-full h-full block group/img cursor-zoom-in"
+        >
+          {img ? (
+            <img
+              src={img}
+              alt={product.name}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
+        </button>
+        <button onClick={onToggleFav} className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur rounded-full p-2 hover:scale-110 transition">
           <Heart className={`w-4 h-4 ${isFavorite ? "fill-primary text-primary" : "text-muted-foreground"}`} />
         </button>
         {outOfStock && (
-          <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/70 flex items-center justify-center pointer-events-none">
             <span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">Esgotado</span>
           </div>
         )}
