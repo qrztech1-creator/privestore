@@ -131,9 +131,44 @@ function LojaPage() {
             <a href="#destaques" className="hover:text-primary transition">Destaques</a>
             <a href="#historia" className="hover:text-primary transition">Sobre</a>
           </nav>
-          <div className="flex-1 relative max-w-xs ml-auto">
+          <div ref={searchWrapRef} className="flex-1 relative max-w-xs ml-auto">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar peças..." className="pl-9 h-9 bg-secondary/60 border-border/50" />
+            <Input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              placeholder="Buscar peças..."
+              className="pl-9 h-9 bg-secondary/60 border-border/50"
+            />
+            {searchOpen && search.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/60 rounded-xl shadow-2xl overflow-hidden z-50 max-h-[70vh] overflow-y-auto">
+                {searchResults.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">Nada encontrado para "{search}"</div>
+                ) : (
+                  <ul className="py-1">
+                    {searchResults.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => { setModalProduct(p); setSearchOpen(false); setSearch(""); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary/60 text-left transition"
+                        >
+                          <div className="w-12 h-14 rounded-md bg-secondary overflow-hidden shrink-0">
+                            {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">{p.name}</div>
+                            <div className="text-[10px] uppercase tracking-widest text-muted-foreground truncate">
+                              {p.line_name || p.category_name || "Coleção"}
+                            </div>
+                          </div>
+                          <div className="text-primary text-sm font-display shrink-0">R$ {Number(p.price).toFixed(2)}</div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           <Link to="/loja/carrinho">
             <Button variant="outline" size="sm" className="relative border-border/60">
