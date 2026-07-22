@@ -358,19 +358,18 @@ function LojaPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((p, i) => (
-              <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} user={user} />
+              <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} onOpen={() => setModalProduct(p)} user={user} />
             ))}
           </div>
         )}
       </section>
 
       {/* História / CTA band */}
-      <section id="historia" className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-primary" />
-        <div className="absolute inset-0 -z-10 opacity-25" style={{
+      <section id="historia" className="relative overflow-hidden bg-primary">
+        <div className="absolute inset-0 opacity-25 pointer-events-none" style={{
           backgroundImage: "radial-gradient(circle at 20% 30%, oklch(0.74 0.10 70 / 0.6), transparent 40%), radial-gradient(circle at 80% 70%, oklch(0.78 0.075 35 / 0.5), transparent 45%)",
         }} />
-        <div className="max-w-6xl mx-auto px-4 py-20 text-center text-primary-foreground">
+        <div className="relative max-w-6xl mx-auto px-4 py-20 text-center text-primary-foreground">
           <div className="text-[11px] uppercase tracking-[0.3em] opacity-70 mb-4">Nossa história</div>
           <h2 className="font-display text-4xl sm:text-6xl leading-tight max-w-3xl mx-auto mb-6">
             Cada peça nasce de um <em className="italic">ritual</em> — de mãos que costuram devagar.
@@ -385,7 +384,7 @@ function LojaPage() {
               </Button>
             </a>
             <a href="#colecoes">
-              <Button size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10 px-8 h-12 tracking-wider uppercase text-xs">
+              <Button size="lg" variant="outline" className="border-primary-foreground/50 bg-transparent text-primary-foreground hover:bg-primary-foreground hover:text-primary px-8 h-12 tracking-wider uppercase text-xs">
                 Explorar coleção
               </Button>
             </a>
