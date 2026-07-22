@@ -1,13 +1,87 @@
 import { createServerFn } from "@tanstack/react-start";
 
-interface Input {
+interface CreateOrderInput {
+  customer_id?: string | null;
+  guest_name: string;
+  guest_email: string;
+  guest_phone?: string | null;
+  address_line?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_zip?: string | null;
+  message?: string | null;
+  total: number;
+  payment_provider: string;
+  items: Array<{
+    productId: string;
+    variantId?: string | null;
+    name: string;
+    variantLabel?: string | null;
+    qty: number;
+    price: number;
+  }>;
+}
+
+export const createShopOrderServerFn = createServerFn({ method: "POST" })
+  .inputValidator((data: CreateOrderInput) => {
+    if (!data?.guest_name || !data?.guest_email) throw new Error("Nome e e-mail são obrigatórios");
+    if (!data?.items || data.items.length === 0) throw new Error("Carrinho vazio");
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: order, error } = await supabaseAdmin
+      .from("shop_orders")
+      .insert({
+        customer_id: data.customer_id || null,
+        guest_name: data.guest_name,
+        guest_email: data.guest_email,
+        guest_phone: data.guest_phone || null,
+        address_line: data.address_line || null,
+        address_city: data.address_city || null,
+        address_state: data.address_state || null,
+        address_zip: data.address_zip || null,
+        message: data.message || null,
+        total: data.total,
+        status: "pending",
+        payment_provider: data.payment_provider,
+      })
+      .select()
+      .single();
+
+    if (error || !order) {
+      console.error("Erro ao criar pedido no servidor:", error);
+      throw new Error(error?.message || "Falha ao criar o pedido.");
+    }
+
+    const orderItems = data.items.map((i) => ({
+      order_id: order.id,
+      product_id: i.productId,
+      variant_id: i.variantId || null,
+      product_name: i.variantLabel ? `${i.name} — ${i.variantLabel}` : i.name,
+      variant_label: i.variantLabel || null,
+      qty: i.qty,
+      unit_price: i.price,
+    }));
+
+    const { error: itemErr } = await supabaseAdmin.from("shop_order_items").insert(orderItems);
+    if (itemErr) {
+      console.error("Erro ao salvar itens do pedido:", itemErr);
+      throw new Error(itemErr.message);
+    }
+
+    return order;
+  });
+
+interface CheckoutInput {
   order_id: string;
   success_url?: string;
   cancel_url?: string;
 }
 
 export const createInfinitepayCheckout = createServerFn({ method: "POST" })
-  .inputValidator((data: Input) => {
+  .inputValidator((data: CheckoutInput) => {
     if (!data?.order_id) throw new Error("order_id obrigatório");
     return data;
   })
@@ -78,7 +152,6 @@ export const createInfinitepayCheckout = createServerFn({ method: "POST" })
     }
 
     const json = await res.json();
-    // A API retorna a URL do checkout em `url`, `checkout_url` ou `link`
     const checkoutUrl = json.url || json.checkout_url || json.link || (json.slug ? `https://checkout.infinitepay.io/${json.slug}` : null);
 
     if (!checkoutUrl) {
