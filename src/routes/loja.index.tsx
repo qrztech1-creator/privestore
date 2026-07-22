@@ -466,7 +466,7 @@ function LojaPage() {
   );
 }
 
-function ShopCard({ product, delay, isFavorite, onToggleFav, user }: any) {
+function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any) {
   const add = useShopCart((s) => s.add);
   const variants: any[] = product.variants || [];
   const images: any[] = product.images || [];
