@@ -13,7 +13,7 @@ import pixQr from "@/assets/pix-qr.jpeg";
 
 // WhatsApp da loja (formato: DDI+DDD+número, só dígitos)
 // Pode ser sobrescrito com a env VITE_STORE_WHATSAPP.
-const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
+const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
 
 export const Route = createFileRoute("/loja/carrinho")({
   component: CarrinhoPage,

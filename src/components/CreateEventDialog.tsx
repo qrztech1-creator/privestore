@@ -116,7 +116,7 @@ export function CreateEventDialog({ open, onOpenChange, onCreated }: { open: boo
                 <div><Label>Data</Label><Input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>WhatsApp (DDI+DDD+nº)</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="5527999998888" /></div>
+                <div><Label>WhatsApp (DDI+DDD+nº)</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="5527992042450" /></div>
                 <div><Label>E-mail da noiva</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
               </div>
               <div className="flex justify-end pt-2">

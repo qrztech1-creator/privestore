@@ -124,7 +124,7 @@ function PageTab({ event, updateEvent }: any) {
         <div><Label>Parceiro(a)</Label><Input value={form.partner_name || ""} onChange={(e) => set("partner_name", e.target.value)} /></div>
         <div><Label>Data do evento</Label><Input type="datetime-local" value={form.event_date ? new Date(form.event_date).toISOString().slice(0, 16) : ""} onChange={(e) => set("event_date", e.target.value)} /></div>
         <div><Label>Mensagem da noiva</Label><Textarea rows={4} value={form.message || ""} onChange={(e) => set("message", e.target.value)} placeholder="Compartilhe um recado especial..." /></div>
-        <div><Label>WhatsApp (DDI+DDD+número)</Label><Input value={form.whatsapp_number || ""} onChange={(e) => set("whatsapp_number", e.target.value)} placeholder="5511999998888" /></div>
+        <div><Label>WhatsApp (DDI+DDD+número)</Label><Input value={form.whatsapp_number || ""} onChange={(e) => set("whatsapp_number", e.target.value)} placeholder="5527992042450" /></div>
         <div><Label>Playlist (link Spotify)</Label><Input value={form.playlist_url || ""} onChange={(e) => set("playlist_url", e.target.value)} placeholder="https://open.spotify.com/playlist/..." /></div>
         <div><Label>Mensagem de agradecimento (após pedido)</Label><Textarea rows={3} value={form.thank_you_message || ""} onChange={(e) => set("thank_you_message", e.target.value)} placeholder="Muito obrigada pelo carinho..." /></div>
         <div>

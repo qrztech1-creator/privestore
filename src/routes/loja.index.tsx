@@ -15,7 +15,7 @@ import { motion } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 import { ProductModal } from "@/components/ProductModal";
 
-const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5511999999999";
+const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
 
 export const Route = createFileRoute("/loja/")({
   component: LojaPage,
@@ -431,7 +431,12 @@ function LojaPage() {
           <div>
             <div className="text-[11px] uppercase tracking-widest text-primary/70 mb-3">Contato</div>
             <ul className="space-y-2 text-muted-foreground">
-              <li className="flex items-center gap-2"><MessageCircle className="w-3 h-3" />WhatsApp</li>
+              <li>
+                <a href={waHref} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
+                  <MessageCircle className="w-3 h-3" />
+                  +55 27 99204-2450
+                </a>
+              </li>
               <li className="flex items-center gap-2"><Instagram className="w-3 h-3" />@priveloja</li>
               <li className="flex items-center gap-2"><Mail className="w-3 h-3" />contatopriveloja@gmail.com</li>
             </ul>
