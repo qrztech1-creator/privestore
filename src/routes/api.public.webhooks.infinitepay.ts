@@ -1,52 +1,36 @@
 // ============================================================
-// InfinitePay webhook — stub pré-cabeado.
-// Configurar no painel InfinitePay apontando para:
-//   https://<seu-dominio>/api/public/webhooks/infinitepay
-// Secrets necessárias: INFINITEPAY_WEBHOOK_SECRET
+// InfinitePay Webhook — Notificação em tempo real de pagamento aprovado
+// Endpoint: POST /api/public/webhooks/infinitepay
+// Docs: https://api.checkout.infinitepay.io/links
 // ============================================================
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const Route = createFileRoute("/api/public/webhooks/infinitepay")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.INFINITEPAY_WEBHOOK_SECRET;
-        if (!secret) return new Response("infinitepay not configured", { status: 503 });
+        try {
+          const body = await request.json();
+          console.log("Recebido Webhook InfinitePay:", body);
 
-        const raw = await request.text();
-        const signature = request.headers.get("x-infinitepay-signature") || "";
-        const expected = createHmac("sha256", secret).update(raw).digest("hex");
-        const sig = Buffer.from(signature);
-        const exp = Buffer.from(expected);
-        if (sig.length !== exp.length || !timingSafeEqual(sig, exp)) {
-          return new Response("invalid signature", { status: 401 });
-        }
-
-        const event = JSON.parse(raw);
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-        // TODO: mapear estrutura real conforme docs InfinitePay
-        // Exemplo baseado em eventos comuns de checkout
-        if (event.type === "payment.approved" || event.event === "paid") {
-          const sessionId = event.data?.session_id || event.session_id;
-          if (sessionId) {
+          const orderId = body.order_nsu;
+          if (orderId) {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             await supabaseAdmin
               .from("shop_orders")
-              .update({ status: "paid" })
-              .eq("payment_session_id", sessionId);
+              .update({
+                status: "paid",
+                payment_session_id: body.invoice_slug || body.transaction_nsu || null,
+              })
+              .eq("id", orderId);
           }
-        } else if (event.type === "payment.failed" || event.event === "cancelled") {
-          const sessionId = event.data?.session_id || event.session_id;
-          if (sessionId) {
-            await supabaseAdmin
-              .from("shop_orders")
-              .update({ status: "cancelled" })
-              .eq("payment_session_id", sessionId);
-          }
-        }
 
-        return new Response("ok");
+          // A documentação exige resposta 200 rápida
+          return new Response("OK", { status: 200 });
+        } catch (err: any) {
+          console.error("Erro no processamento do webhook InfinitePay:", err);
+          return new Response("Internal Server Error", { status: 500 });
+        }
       },
     },
   },
