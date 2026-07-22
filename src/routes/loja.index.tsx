@@ -453,6 +453,15 @@ function LojaPage() {
         <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30" />
         <MessageCircle className="w-6 h-6 relative" />
       </a>
+
+      <ProductModal
+        product={modalProduct}
+        open={!!modalProduct}
+        onClose={() => setModalProduct(null)}
+        isFavorite={modalProduct ? favorites.has(modalProduct.id) : false}
+        onToggleFav={() => modalProduct && toggleFav(modalProduct.id)}
+        user={user}
+      />
     </div>
   );
 }
