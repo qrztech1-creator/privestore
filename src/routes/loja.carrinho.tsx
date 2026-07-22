@@ -10,6 +10,7 @@ import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 import { ArrowLeft, MessageCircle, Minus, Plus, Trash, QrCode, CreditCard, Copy } from "lucide-react";
 import pixQr from "@/assets/pix-qr.jpeg";
+import { createInfinitepayCheckout } from "@/lib/infinitepay.functions";
 
 // WhatsApp da loja (formato: DDI+DDD+número, só dígitos)
 // Pode ser sobrescrito com a env VITE_STORE_WHATSAPP.
@@ -99,6 +100,41 @@ function CarrinhoPage() {
       toast.success("Pedido registrado! Escaneie o QR do PIX e envie o comprovante no WhatsApp.");
       (window as any).__prive_wa = waUrl;
       return;
+    }
+
+    if (method === "card") {
+      try {
+        const res = await createInfinitepayCheckout({
+          data: {
+            order_id: order.id,
+            success_url: `${window.location.origin}/loja?pagamento=sucesso`,
+            cancel_url: `${window.location.origin}/loja/carrinho`,
+          },
+        });
+        if (res.ok && res.url) {
+          clear();
+          setBusy(false);
+          toast.success("Redirecionando para o pagamento na InfinitePay...");
+          window.location.href = res.url;
+          return;
+        } else if (res.pending_setup) {
+          toast.info("InfinitePay pendente de configuração das chaves de API.");
+          clear();
+          setBusy(false);
+          toast.success("Pedido registrado! Abrindo WhatsApp...");
+          window.open(waUrl, "_blank");
+          navigate({ to: "/loja" });
+          return;
+        }
+      } catch (err: any) {
+        console.error("Erro no checkout da InfinitePay:", err);
+        toast.error("Erro ao gerar link online. Direcionando para o WhatsApp...");
+        clear();
+        setBusy(false);
+        window.open(waUrl, "_blank");
+        navigate({ to: "/loja" });
+        return;
+      }
     }
 
     clear();
