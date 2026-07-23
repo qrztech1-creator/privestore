@@ -70,31 +70,58 @@ function LojaPage() {
 
   useEffect(() => {
     let mounted = true;
+
+    // Safety timeout: never stay loading more than 12s
+    const loadingTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn("[Loja] Catalog loading timeout, forcing loading=false");
+        setLoading(false);
+      }
+    }, 12000);
+
     (async () => {
       try {
-        const { data, error } = await supabase.rpc("get_shop_catalog");
-        if (!error && Array.isArray(data) && data.length > 0) {
-          if (mounted) setProducts(data);
+        // Attempt RPC call first (returns JSONB)
+        const { data: rpcData, error: rpcErr } = await supabase.rpc("get_shop_catalog");
+
+        // Parse JSONB: the RPC might return a single jsonb value, or an array
+        let catalog: any[] = [];
+        if (!rpcErr && rpcData) {
+          if (Array.isArray(rpcData) && rpcData.length > 0) {
+            catalog = rpcData;
+          } else if (typeof rpcData === 'object' && !Array.isArray(rpcData)) {
+            // If it's a single JSON object containing an array
+            const parsed = Array.isArray(rpcData) ? rpcData : [];
+            catalog = parsed;
+          }
+        }
+
+        if (catalog.length > 0) {
+          if (mounted) setProducts(catalog);
         } else {
-          // Fallback consulta direta na tabela products se RPC falhar ou retornar vazio
+          // Fallback: direct query to products table
+          console.log("[Loja] RPC returned empty, using fallback query");
           const { data: rawProds, error: rawErr } = await supabase
             .from("products")
             .select("*, variants:product_variants(*), images:product_images(*)")
             .eq("active", true)
             .order("name");
-          if (!rawErr && rawProds && mounted) {
+          if (!rawErr && rawProds && rawProds.length > 0 && mounted) {
             setProducts(rawProds);
           } else if (mounted) {
-            setProducts(Array.isArray(data) ? data : []);
+            console.warn("[Loja] Fallback also empty/failed", rawErr);
+            setProducts([]);
           }
         }
       } catch (err) {
         console.error("Erro ao carregar catálogo da loja:", err);
+        if (mounted) setProducts([]);
       } finally {
         if (mounted) setLoading(false);
+        clearTimeout(loadingTimeout);
       }
     })();
-    return () => { mounted = false; };
+    return () => { mounted = false; clearTimeout(loadingTimeout); };
   }, []);
 
   useEffect(() => {
@@ -224,37 +251,6 @@ function LojaPage() {
     addRecentlyViewed(product.id);
   }
 
-  async function handleCustomerAuth(e: React.FormEvent) {
-    e.preventDefault();
-    if (!authEmail || !authPass) return toast.error("Preencha e-mail e senha");
-    setAuthLoading(true);
-
-    try {
-      if (authMode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: authPass,
-        });
-        if (error) throw error;
-        toast.success("Bem-vinda de volta! ✨");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email: authEmail,
-          password: authPass,
-          options: { data: { full_name: authName || "Cliente" } },
-        });
-        if (error) throw error;
-        toast.success("Conta criada com sucesso! Sinta-se em casa ✨");
-      }
-      setShowAuthModal(false);
-      setAuthPass("");
-    } catch (err: any) {
-      console.error("Erro na autenticação:", err);
-      toast.error(err.message || "Falha na autenticação.");
-    } finally {
-      setAuthLoading(false);
-    }
-  }
 
   const waHref = `https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Vim da loja Privê 💌")}`;
 
@@ -319,30 +315,25 @@ function LojaPage() {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (user) {
-                  navigate({ to: "/painel", search: { tab: "favoritos" } });
-                } else {
-                  toast.info("Faça login para ver seus favoritos ♡");
-                  setShowAuthModal(true);
-                }
-              }}
-              className="border-border/60"
-              title="Meus Favoritos"
-            >
-              <Heart className={`w-4 h-4 ${favorites.size > 0 ? "fill-primary text-primary" : ""}`} />
-              {favorites.size > 0 && <span className="ml-1 text-xs font-bold">{favorites.size}</span>}
-            </Button>
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate({ to: "/painel", search: { tab: "favoritos" } })}
+                className="border-border/60"
+                title="Meus Favoritos"
+              >
+                <Heart className={`w-4 h-4 ${favorites.size > 0 ? "fill-primary text-primary" : ""}`} />
+                {favorites.size > 0 && <span className="ml-1 text-xs font-bold">{favorites.size}</span>}
+              </Button>
+            )}
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
                 if (user) {
-                  navigate({ to: "/painel" });
+                  navigate({ to: "/painel", search: { tab: "pedidos" } });
                 } else {
                   setShowAuthModal(true);
                 }
@@ -782,9 +773,11 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
           )}
         </button>
-        <button onClick={onToggleFav} className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur rounded-full p-2 hover:scale-110 transition">
-          <Heart className={`w-4 h-4 ${isFavorite ? "fill-primary text-primary" : "text-muted-foreground"}`} />
-        </button>
+        {user && (
+          <button onClick={onToggleFav} className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur rounded-full p-2 hover:scale-110 transition">
+            <Heart className={`w-4 h-4 ${isFavorite ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+          </button>
+        )}
         {outOfStock && (
           <div className="absolute inset-0 bg-background/70 flex items-center justify-center pointer-events-none">
             <span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">Esgotado</span>

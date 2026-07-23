@@ -64,19 +64,24 @@ export function PainelCliente() {
       ? `customer_id.eq.${user.id},guest_email.eq.${user.email}`
       : `customer_id.eq.${user.id}`;
 
-    supabase
-      .from("shop_orders")
-      .select("*, items:shop_order_items(*)")
-      .or(queryFilter)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("shop_orders")
+          .select("*, items:shop_order_items(*)")
+          .or(queryFilter)
+          .order("created_at", { ascending: false });
         if (error) {
           console.error("Erro ao buscar pedidos:", error);
         } else if (data) {
           setOrders(data);
         }
+      } catch (err) {
+        console.error("Erro inesperado ao buscar pedidos:", err);
+      } finally {
         setFetchingOrders(false);
-      });
+      }
+    })();
   }, [user]);
 
   // Carregar produtos favoritados

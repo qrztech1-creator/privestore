@@ -1,9 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { useEffect, type ReactNode, type ComponentType } from "react";
+import { useEffect, useState, type ReactNode, type ComponentType } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, LogOut, ShoppingBag, BarChart3, Tag, Users, Sparkles, Ticket } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, ShoppingBag, BarChart3, Tag, Users, Sparkles, Ticket, Loader2 } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -39,12 +39,27 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken, na
   const nav = useNavigate();
   const path = useRouterState({ select: (r) => r.location.pathname });
 
+  // Safety: force-end loading after 10s to prevent infinite "Carregando painel..."
+  const [forceLoaded, setForceLoaded] = useState(false);
   useEffect(() => {
-    if (mode === "admin" && !loading && !user) nav({ to: "/login" });
-  }, [loading, user, mode, nav]);
+    if (!loading) return;
+    const t = setTimeout(() => setForceLoaded(true), 10000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
-  if (mode === "admin" && loading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando painel...</div>;
+  const effectiveLoading = loading && !forceLoaded;
+
+  useEffect(() => {
+    if (mode === "admin" && !effectiveLoading && !user) nav({ to: "/login" });
+  }, [effectiveLoading, user, mode, nav]);
+
+  if (mode === "admin" && effectiveLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="text-sm">Carregando painel...</span>
+      </div>
+    );
   }
 
   if (mode === "admin" && user && !isAdmin) {
