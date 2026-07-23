@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 import { ProductModal } from "@/components/ProductModal";
+import { CustomerAuthModal } from "@/components/CustomerAuthModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
@@ -45,21 +46,16 @@ export const Route = createFileRoute("/loja/")({
 
 function LojaPage() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [lineFilter, setLineFilter] = useState<string>("all");
-  const [showOnlyFavs, setShowOnlyFavs] = useState(false);
   const [modalProduct, setModalProduct] = useState<any | null>(null);
   
   // Customer Auth Modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [authEmail, setAuthEmail] = useState("");
-  const [authPass, setAuthPass] = useState("");
-  const [authName, setAuthName] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
 
   const cartCount = useShopCart((s) => s.items.reduce((a, b) => a + b.qty, 0));
   
@@ -73,11 +69,32 @@ function LojaPage() {
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
-      const { data } = await supabase.rpc("get_shop_catalog");
-      setProducts(Array.isArray(data) ? data : []);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.rpc("get_shop_catalog");
+        if (!error && Array.isArray(data) && data.length > 0) {
+          if (mounted) setProducts(data);
+        } else {
+          // Fallback consulta direta na tabela products se RPC falhar ou retornar vazio
+          const { data: rawProds, error: rawErr } = await supabase
+            .from("products")
+            .select("*, variants:product_variants(*), images:product_images(*)")
+            .eq("active", true)
+            .order("name");
+          if (!rawErr && rawProds && mounted) {
+            setProducts(rawProds);
+          } else if (mounted) {
+            setProducts(Array.isArray(data) ? data : []);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao carregar catálogo da loja:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     })();
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
@@ -100,11 +117,10 @@ function LojaPage() {
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      if (showOnlyFavs && !favorites.has(p.id)) return false;
       if (lineFilter !== "all" && p.line_id !== lineFilter) return false;
       return true;
     });
-  }, [products, lineFilter, showOnlyFavs, favorites]);
+  }, [products, lineFilter]);
 
   const searchResults = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -306,8 +322,15 @@ function LojaPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowOnlyFavs(!showOnlyFavs)}
-              className={showOnlyFavs ? "border-primary text-primary bg-primary/10" : "border-border/60"}
+              onClick={() => {
+                if (user) {
+                  navigate({ to: "/painel", search: { tab: "favoritos" } });
+                } else {
+                  toast.info("Faça login para ver seus favoritos ♡");
+                  setShowAuthModal(true);
+                }
+              }}
+              className="border-border/60"
               title="Meus Favoritos"
             >
               <Heart className={`w-4 h-4 ${favorites.size > 0 ? "fill-primary text-primary" : ""}`} />
@@ -317,13 +340,19 @@ function LojaPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => {
+                if (user) {
+                  navigate({ to: "/painel" });
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
               className="border-border/60"
-              title={user ? "Sua Conta" : "Entrar / Cadastrar"}
+              title={user ? "Meu Painel" : "Entrar / Cadastrar"}
             >
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline ml-1 text-xs truncate max-w-[100px]">
-                {user ? (user.email?.split("@")[0] || "Minha Conta") : "Entrar"}
+              <span className="hidden sm:inline ml-1 text-xs truncate max-w-[110px]">
+                {user ? (user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "Meu Painel") : "Entrar"}
               </span>
             </Button>
 
@@ -690,6 +719,11 @@ function LojaPage() {
         isFavorite={modalProduct ? favorites.has(modalProduct.id) : false}
         onToggleFav={() => modalProduct && handleToggleFav(modalProduct.id)}
         user={user}
+      />
+
+      <CustomerAuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
       />
     </div>
   );

@@ -40,11 +40,21 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken, na
   const path = useRouterState({ select: (r) => r.location.pathname });
 
   useEffect(() => {
-    if (mode === "admin" && !loading && (!user || !isAdmin)) nav({ to: "/login" });
-  }, [loading, user, isAdmin, mode, nav]);
+    if (mode === "admin" && !loading && !user) nav({ to: "/login" });
+  }, [loading, user, mode, nav]);
 
-  if (mode === "admin" && (loading || !user)) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando...</div>;
+  if (mode === "admin" && loading) {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando painel...</div>;
+  }
+
+  if (mode === "admin" && user && !isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <h1 className="font-display text-2xl">Acesso Restrito</h1>
+        <p className="text-sm text-muted-foreground max-w-sm">Sua conta ({user.email}) não possui privilégios de administração.</p>
+        <Button onClick={() => nav({ to: "/painel" })}>Ir para o Meu Painel (Cliente)</Button>
+      </div>
+    );
   }
 
   const items: NavItem[] = navItems ?? (mode === "admin" ? adminNav : []);

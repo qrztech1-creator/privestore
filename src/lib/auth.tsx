@@ -54,9 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function fetchRoles(uid: string) {
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-    if (data) {
-      setRoles(data.map((r) => r.role as Role));
+    try {
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+      if (data && !error) {
+        setRoles(data.map((r) => r.role as Role));
+      }
+    } catch (e) {
+      console.error("Erro ao carregar permissões:", e);
     }
   }
 
