@@ -829,7 +829,7 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.01 }} transition={{ duration: 0.25 }} className="bg-card rounded-2xl overflow-hidden group border border-border/40 hover:border-primary/40 hover:shadow-xl transition">
+    <div className="bg-card rounded-2xl overflow-hidden group border border-border/40 hover:border-primary/40 hover:shadow-xl transition-all duration-300">
       <div className="aspect-[4/5] bg-secondary overflow-hidden relative">
         <button
           type="button"
@@ -841,7 +841,7 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
             <img
               src={img}
               alt={product.name}
-              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
             />
           ) : (
@@ -906,6 +906,6 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
           </Button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

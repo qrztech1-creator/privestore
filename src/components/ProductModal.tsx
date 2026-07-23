@@ -90,10 +90,10 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-4xl p-0 overflow-y-auto max-h-[92vh] md:max-h-[85vh] bg-card border-border/60 rounded-3xl shadow-2xl">
+        <DialogContent className="w-full h-full max-h-none md:max-h-[85vh] md:max-w-4xl p-0 overflow-y-auto bg-card border-none md:border md:border-border/60 rounded-none md:rounded-3xl shadow-2xl">
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 z-30 bg-background/80 backdrop-blur rounded-full p-2 hover:bg-background transition border border-border/40"
+            className="absolute top-3 right-3 z-40 bg-background/80 backdrop-blur rounded-full p-2.5 hover:bg-background transition border border-border/40"
             aria-label="Fechar"
           >
             <X className="w-4 h-4" />
@@ -101,22 +101,29 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
 
           <div className="grid md:grid-cols-2">
             {/* ÁREA DE IMAGENS — DESKTOP (side-by-side) & MOBILE (imagem + miniaturas à direita) */}
-            <div className="bg-secondary/50 p-3 sm:p-4 md:p-0 flex flex-col justify-center">
+            <div className="bg-transparent md:bg-secondary/50 p-3 sm:p-4 md:p-0 flex flex-col justify-center">
               {/* MOBILE LAYOUT (imagem compacta à esquerda + miniaturas empilhadas à direita) */}
               <div className="flex md:hidden gap-3 items-stretch h-[210px]">
-                {/* Imagem Principal no Mobile (Clique abre modal maior com X) */}
+                {/* Imagem Principal no Mobile (Clique abre modal maior em tela cheia com X) */}
                 <div
                   onClick={() => setFullscreenImageOpen(true)}
-                  className="flex-1 bg-secondary rounded-2xl overflow-hidden relative cursor-zoom-in border border-border/40 group"
+                  className="flex-1 bg-secondary rounded-2xl overflow-hidden relative cursor-pointer border border-border/40 group shadow-sm"
                 >
                   {mainImg ? (
                     <img src={mainImg} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
                   )}
-                  <div className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] px-2 py-0.5 rounded-full backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFullscreenImageOpen(true);
+                    }}
+                    className="absolute bottom-2 right-2 bg-black/70 hover:bg-black text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur font-medium shadow-md transition"
+                  >
                     Ampliar 🔍
-                  </div>
+                  </button>
                 </div>
 
                 {/* Miniaturas à direita no Mobile */}
@@ -127,7 +134,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                         key={i}
                         onClick={() => setActiveIdx(i)}
                         className={`w-full aspect-square rounded-xl overflow-hidden border-2 shrink-0 transition ${
-                          activeIdx === i ? "border-primary scale-95" : "border-transparent opacity-70"
+                          activeIdx === i ? "border-primary scale-95 shadow-sm" : "border-transparent opacity-70"
                         }`}
                       >
                         <img src={im.url} alt="" className="w-full h-full object-cover" />
@@ -141,6 +148,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
               <div className="hidden md:flex flex-col">
                 <div
                   ref={imgRef}
+                  onClick={() => setFullscreenImageOpen(true)}
                   className="relative aspect-[4/5] overflow-hidden cursor-zoom-in bg-secondary"
                   onMouseMove={onMove}
                   onMouseEnter={onMove}
@@ -163,6 +171,16 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
                   )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFullscreenImageOpen(true);
+                    }}
+                    className="absolute bottom-3 right-3 bg-black/70 hover:bg-black text-white text-xs px-3 py-1.5 rounded-full backdrop-blur font-medium shadow-md transition"
+                  >
+                    Ampliar 🔍
+                  </button>
                 </div>
 
                 {visibleImages.length > 1 && (
@@ -315,18 +333,19 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
         </DialogContent>
       </Dialog>
 
-      {/* FULLSCREEN IMAGE LIGHTBOX MODAL (Para Mobile) */}
+      {/* FULLSCREEN IMAGE LIGHTBOX MODAL (Z-[9999] para ficar em cima de tudo) */}
       {fullscreenImageOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setFullscreenImageOpen(false)}
         >
           <button
+            type="button"
             onClick={() => setFullscreenImageOpen(false)}
-            className="absolute top-4 right-4 z-50 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur transition border border-white/30"
+            className="absolute top-4 right-4 z-[10000] w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur transition border border-white/30 shadow-lg cursor-pointer"
             aria-label="Fechar Imagem"
           >
-            <X className="w-6 h-6" />
+            <X className="w-7 h-7" />
           </button>
 
           <div className="relative max-w-full max-h-[82vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
@@ -342,9 +361,10 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
               {visibleImages.map((im, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => setActiveIdx(i)}
-                  className={`shrink-0 w-12 h-14 rounded-xl overflow-hidden border-2 transition ${
-                    activeIdx === i ? "border-primary scale-105" : "border-transparent opacity-50"
+                  className={`shrink-0 w-14 h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
+                    activeIdx === i ? "border-primary scale-105 shadow-md" : "border-transparent opacity-50"
                   }`}
                 >
                   <img src={im.url} alt="" className="w-full h-full object-cover" />
