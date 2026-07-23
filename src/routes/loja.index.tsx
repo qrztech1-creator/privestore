@@ -281,6 +281,17 @@ function LojaPage() {
     return () => clearInterval(interval);
   }, [bodyProducts]);
 
+  // Precarregar imagens do hero banner para transição instantânea e sem piscadas no mobile
+  useEffect(() => {
+    if (!bodyProducts || bodyProducts.length === 0) return;
+    bodyProducts.forEach((p: any) => {
+      if (p?.image_url) {
+        const img = new Image();
+        img.src = p.image_url;
+      }
+    });
+  }, [bodyProducts]);
+
   const currentHighlight = bodyProducts[highlightIdx] || featured[0] || products[0];
 
   const recentlyViewedProducts = useMemo(() => {
@@ -471,19 +482,17 @@ function LojaPage() {
               onClick={() => currentHighlight && handleOpenModal(currentHighlight)}
               className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl group cursor-pointer border border-border/40"
             >
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={currentHighlight?.id || highlightIdx}
-                  src={currentHighlight?.image_url || featured[0]?.image_url || "https://images.tcdn.com.br/img/img_prod/794909/baby_doll_amara_4328_variacao_25668_4_b4852564e8bc544a4d3e8c4b5c3caa06.jpg"}
-                  alt={currentHighlight?.name || "Lingerie Privê"}
-                  referrerPolicy="no-referrer"
-                  initial={{ opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
-                />
-              </AnimatePresence>
+              <div className="w-full h-full bg-secondary overflow-hidden relative">
+                {currentHighlight?.image_url && (
+                  <img
+                    key={currentHighlight.image_url}
+                    src={currentHighlight.image_url}
+                    alt={currentHighlight?.name || "Lingerie Privê"}
+                    decoding="async"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 animate-in fade-in duration-500"
+                  />
+                )}
+              </div>
               <div className="absolute bottom-6 left-6 right-6 glass rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xl backdrop-blur-md">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
