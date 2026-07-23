@@ -23,6 +23,7 @@ import { Route as AdminPedidosRouteImport } from './routes/admin.pedidos'
 import { Route as AdminLinhasRouteImport } from './routes/admin.linhas'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminEventosIndexRouteImport } from './routes/admin.eventos.index'
+import { Route as ApiPublicExportRouteImport } from './routes/api.public.export'
 import { Route as AdminEventosIdRouteImport } from './routes/admin.eventos.$id'
 import { Route as ApiPublicWebhooksInfinitepayRouteImport } from './routes/api.public.webhooks.infinitepay'
 
@@ -96,6 +97,11 @@ const AdminEventosIndexRoute = AdminEventosIndexRouteImport.update({
   path: '/admin/eventos/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicExportRoute = ApiPublicExportRouteImport.update({
+  id: '/api/public/export',
+  path: '/api/public/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEventosIdRoute = AdminEventosIdRouteImport.update({
   id: '/admin/eventos/$id',
   path: '/admin/eventos/$id',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/loja/': typeof LojaIndexRoute
   '/painel/': typeof PainelIndexRoute
   '/admin/eventos/$id': typeof AdminEventosIdRoute
+  '/api/public/export': typeof ApiPublicExportRoute
   '/admin/eventos/': typeof AdminEventosIndexRoute
   '/api/public/webhooks/infinitepay': typeof ApiPublicWebhooksInfinitepayRoute
 }
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/loja': typeof LojaIndexRoute
   '/painel': typeof PainelIndexRoute
   '/admin/eventos/$id': typeof AdminEventosIdRoute
+  '/api/public/export': typeof ApiPublicExportRoute
   '/admin/eventos': typeof AdminEventosIndexRoute
   '/api/public/webhooks/infinitepay': typeof ApiPublicWebhooksInfinitepayRoute
 }
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/loja/': typeof LojaIndexRoute
   '/painel/': typeof PainelIndexRoute
   '/admin/eventos/$id': typeof AdminEventosIdRoute
+  '/api/public/export': typeof ApiPublicExportRoute
   '/admin/eventos/': typeof AdminEventosIndexRoute
   '/api/public/webhooks/infinitepay': typeof ApiPublicWebhooksInfinitepayRoute
 }
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/loja/'
     | '/painel/'
     | '/admin/eventos/$id'
+    | '/api/public/export'
     | '/admin/eventos/'
     | '/api/public/webhooks/infinitepay'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/loja'
     | '/painel'
     | '/admin/eventos/$id'
+    | '/api/public/export'
     | '/admin/eventos'
     | '/api/public/webhooks/infinitepay'
   id:
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/loja/'
     | '/painel/'
     | '/admin/eventos/$id'
+    | '/api/public/export'
     | '/admin/eventos/'
     | '/api/public/webhooks/infinitepay'
   fileRoutesById: FileRoutesById
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   LojaIndexRoute: typeof LojaIndexRoute
   PainelIndexRoute: typeof PainelIndexRoute
   AdminEventosIdRoute: typeof AdminEventosIdRoute
+  ApiPublicExportRoute: typeof ApiPublicExportRoute
   AdminEventosIndexRoute: typeof AdminEventosIndexRoute
   ApiPublicWebhooksInfinitepayRoute: typeof ApiPublicWebhooksInfinitepayRoute
 }
@@ -339,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/export': {
+      id: '/api/public/export'
+      path: '/api/public/export'
+      fullPath: '/api/public/export'
+      preLoaderRoute: typeof ApiPublicExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/eventos/$id': {
       id: '/admin/eventos/$id'
       path: '/admin/eventos/$id'
@@ -371,6 +391,7 @@ const rootRouteChildren: RootRouteChildren = {
   LojaIndexRoute: LojaIndexRoute,
   PainelIndexRoute: PainelIndexRoute,
   AdminEventosIdRoute: AdminEventosIdRoute,
+  ApiPublicExportRoute: ApiPublicExportRoute,
   AdminEventosIndexRoute: AdminEventosIndexRoute,
   ApiPublicWebhooksInfinitepayRoute: ApiPublicWebhooksInfinitepayRoute,
 }
