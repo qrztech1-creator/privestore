@@ -119,6 +119,50 @@ function LojaPage() {
 
   const featured = useMemo(() => products.slice(0, 4), [products]);
 
+  // Lista dinâmica de Bodys com prioridade para a cor Rubi nos 3 primeiros itens
+  const bodyProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    
+    const bodys = products.filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const cat = (p.category_name || "").toLowerCase();
+      const slug = (p.category_slug || "").toLowerCase();
+      return cat.includes("body") || cat.includes("acessorios") || name.includes("body") || slug.includes("acessorios");
+    });
+    
+    const pool = bodys.length > 0 ? bodys : products;
+
+    // Filtrar bodys com variação/nome Rubi ou Vermelho
+    const rubis = pool.filter((p) => {
+      const name = (p.name || "").toLowerCase();
+      const vars = p.variants || [];
+      const hasRubiVar = vars.some((v: any) => 
+        (v.color_name || "").toLowerCase().includes("rubi") || 
+        (v.color_name || "").toLowerCase().includes("vermelho") ||
+        (v.color_name || "").toLowerCase().includes("vinho")
+      );
+      return name.includes("rubi") || name.includes("vermelho") || name.includes("vinho") || hasRubiVar;
+    });
+
+    const others = pool.filter((p) => !rubis.includes(p));
+
+    // Ordenação harmônica: primeiros 3 em cor Rubi (se existirem), depois alterna com as demais cores
+    const ordered = [...rubis.slice(0, 3), ...others, ...rubis.slice(3)];
+    return ordered.length > 0 ? ordered : pool;
+  }, [products]);
+
+  const [highlightIdx, setHighlightIdx] = useState(0);
+
+  useEffect(() => {
+    if (bodyProducts.length <= 1) return;
+    const interval = setInterval(() => {
+      setHighlightIdx((prev) => (prev + 1) % bodyProducts.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [bodyProducts]);
+
+  const currentHighlight = bodyProducts[highlightIdx] || featured[0] || products[0];
+
   const recentlyViewedProducts = useMemo(() => {
     if (!recentlyViewedIds || recentlyViewedIds.length === 0) return [];
     const map = new Map(products.map((p) => [p.id, p]));
@@ -316,17 +360,39 @@ function LojaPage() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative">
-            <div className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl">
+            <div
+              onClick={() => currentHighlight && handleOpenModal(currentHighlight)}
+              className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl group cursor-pointer border border-border/40"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/30 to-gold/20" />
-              {featured[0]?.image_url ? (
-                <img src={featured[0].image_url} alt={featured[0].name} className="w-full h-full object-cover" />
-              ) : null}
-              <div className="absolute bottom-6 left-6 right-6 glass rounded-2xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Sparkles className="w-4 h-4 text-primary" /></div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Editor's pick</div>
-                  <div className="font-display text-lg truncate">{featured[0]?.name || "Peça do momento"}</div>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentHighlight?.id || highlightIdx}
+                  src={currentHighlight?.image_url || featured[0]?.image_url}
+                  alt={currentHighlight?.name || "Lingerie Privê"}
+                  initial={{ opacity: 0, scale: 1.04 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                />
+              </AnimatePresence>
+              <div className="absolute bottom-6 left-6 right-6 glass rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xl backdrop-blur-md">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Destaque · Body Privê</div>
+                    <div className="font-display text-lg truncate text-foreground">{currentHighlight?.name || "Peça do momento"}</div>
+                    {currentHighlight?.price && (
+                      <div className="text-xs text-primary font-semibold">R$ {Number(currentHighlight.price).toFixed(2)}</div>
+                    )}
+                  </div>
                 </div>
+                <Button size="sm" variant="outline" className="text-xs shrink-0 border-primary/40 text-primary">
+                  Ver peça
+                </Button>
               </div>
             </div>
             <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-primary text-primary-foreground flex flex-col items-center justify-center text-center font-display shadow-xl rotate-12">
@@ -525,24 +591,26 @@ function LojaPage() {
         <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
             <Logo className="h-8 mb-3" />
-            <p className="text-xs text-muted-foreground">Lingerie de autor. Feita devagar, para durar.</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Lingerie autoral em renda e seda. Peças exclusivas desenhadas para valorizar sua essência com elegância.
+            </p>
           </div>
           <div>
             <div className="text-[11px] uppercase tracking-widest text-primary/70 mb-3">Navegar</div>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#colecoes" className="hover:text-primary">Coleções</a></li>
-              <li><a href="#linhas" className="hover:text-primary">Linhas</a></li>
-              <li><a href="#destaques" className="hover:text-primary">Destaques</a></li>
-              <li><Link to="/loja/carrinho" className="hover:text-primary">Carrinho</Link></li>
+              <li><a href="#colecoes" className="hover:text-primary transition-colors">Coleções</a></li>
+              <li><a href="#linhas" className="hover:text-primary transition-colors">Linhas</a></li>
+              <li><a href="#destaques" className="hover:text-primary transition-colors">Destaques</a></li>
+              <li><Link to="/loja/carrinho" className="hover:text-primary transition-colors">Carrinho</Link></li>
             </ul>
           </div>
           <div>
             <div className="text-[11px] uppercase tracking-widest text-primary/70 mb-3">Ajuda</div>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href={waHref} target="_blank" rel="noreferrer" className="hover:text-primary">Atendimento</a></li>
-              <li>Trocas & devoluções</li>
-              <li>Envios</li>
-              <li>Guia de tamanhos</li>
+              <li><a href={waHref} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Atendimento</a></li>
+              <li><a href={waHref} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Trocas & devoluções</a></li>
+              <li className="opacity-70">Envios</li>
+              <li className="opacity-70">Guia de tamanhos</li>
             </ul>
           </div>
           <div>
@@ -550,17 +618,33 @@ function LojaPage() {
             <ul className="space-y-2 text-muted-foreground">
               <li>
                 <a href={waHref} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
-                  <MessageCircle className="w-3 h-3" />
+                  <MessageCircle className="w-3.5 h-3.5 text-primary" />
                   +55 27 99204-2450
                 </a>
               </li>
-              <li className="flex items-center gap-2"><Instagram className="w-3 h-3" />@priveloja</li>
-              <li className="flex items-center gap-2"><Mail className="w-3 h-3" />contatopriveloja@gmail.com</li>
+              <li>
+                <a href="https://www.instagram.com/priveloja/" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
+                  <Instagram className="w-3.5 h-3.5 text-primary" />
+                  @priveloja
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-primary" />
+                contatopriveloja@gmail.com
+              </li>
             </ul>
           </div>
         </div>
         <div className="border-t border-border/40 py-4 text-center text-[11px] text-muted-foreground">
-          © {new Date().getFullYear()} Privê — Todos os direitos reservados
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>© {new Date().getFullYear()} Privê — Todos os direitos reservados.</span>
+            <span>
+              Desenvolvido por{" "}
+              <a href="https://qrztech.com" target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline">
+                QRZ Tech
+              </a>
+            </span>
+          </div>
         </div>
       </footer>
 
