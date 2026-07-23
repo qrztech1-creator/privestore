@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useEffect, type ReactNode, type ComponentType } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, LogOut, ShoppingBag, BarChart3, Tag, Users, Sparkles } from "lucide-react";
+import { LayoutDashboard, Package, LogOut, ShoppingBag, BarChart3, Tag, Users, Sparkles, Ticket } from "lucide-react";
 
 export interface NavItem {
   to: string;
@@ -25,11 +25,12 @@ interface Props {
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: BarChart3, exact: true },
-  { to: "/admin/eventos", label: "Eventos", icon: Users },
   { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag },
+  { to: "/admin/cupons", label: "Cupons", icon: Ticket },
   { to: "/admin/produtos", label: "Produtos", icon: Package },
   { to: "/admin/categorias", label: "Categorias", icon: Tag },
   { to: "/admin/linhas", label: "Linhas", icon: Sparkles },
+  { to: "/admin/eventos", label: "Eventos", icon: Users },
   { to: "/admin/usuarios", label: "Equipe", icon: LayoutDashboard },
 ];
 

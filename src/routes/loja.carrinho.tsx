@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Trash, CreditCard, Sparkles, Truck, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash, CreditCard, Sparkles, Truck, Search, Loader2, Ticket } from "lucide-react";
 import { createInfinitepayCheckout, createShopOrderServerFn } from "@/lib/infinitepay.functions";
 import { CustomerAuthModal } from "@/components/CustomerAuthModal";
 
@@ -104,15 +104,55 @@ function CarrinhoPage() {
     }
   }
 
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [loadingCoupon, setLoadingCoupon] = useState(false);
+
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+    setLoadingCoupon(true);
+    const code = couponInput.toUpperCase().trim();
+    const { data, error } = await supabase.from("shop_coupons").select("*").eq("code", code).eq("active", true).single();
+    setLoadingCoupon(false);
+    
+    if (error || !data) {
+      toast.error("Cupom inválido ou expirado.");
+      setAppliedCoupon(null);
+    } else {
+      setAppliedCoupon(data);
+      toast.success("Cupom aplicado com sucesso!");
+    }
+  }
+
   // Cálculos de Desconto e Frete
   const cleanZipCount = zip.replace(/\D/g, "").length;
   const isFreeShipping = subtotal >= 299;
-  const shippingCost = isFreeShipping ? 0 : (cleanZipCount === 8 ? 19.90 : 0);
   
-  // Desconto de 10% na 1ª compra apenas se logado
-  const firstPurchaseDiscount = (user && isFirstPurchase) ? Math.round(subtotal * 0.10 * 100) / 100 : 0;
+  // Frete por distância (via UF)
+  let baseShippingCost = 0;
+  if (cleanZipCount === 8) {
+    const uf = state.toUpperCase();
+    if (uf === "ES") baseShippingCost = 14.90;
+    else if (["MG", "RJ", "SP"].includes(uf)) baseShippingCost = 19.90;
+    else if (["PR", "SC", "RS", "MS", "MT", "GO", "DF"].includes(uf)) baseShippingCost = 29.90;
+    else if (["BA", "SE", "AL", "PE", "PB", "RN", "CE", "PI", "MA"].includes(uf)) baseShippingCost = 34.90;
+    else if (["AM", "PA", "AC", "RO", "RR", "AP", "TO"].includes(uf)) baseShippingCost = 45.90;
+    else baseShippingCost = 29.90; // Default fallback
+  }
+  const shippingCost = isFreeShipping ? 0 : baseShippingCost;
   
-  const total = Math.max(0, subtotal - firstPurchaseDiscount + shippingCost);
+  // Regra de descontos (Mutuamente Exclusivos: Cupom OU 1ª Compra)
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discount_type === "percentage") couponDiscount = Math.round(subtotal * (appliedCoupon.discount_value / 100) * 100) / 100;
+    else couponDiscount = appliedCoupon.discount_value;
+  }
+  
+  const firstPurchaseDiscount = (user && isFirstPurchase && !appliedCoupon) ? Math.round(subtotal * 0.10 * 100) / 100 : 0;
+  
+  const activeDiscount = Math.max(couponDiscount, firstPurchaseDiscount); // Use o maior ou aquele que está ativo
+  
+  const total = Math.max(0, subtotal - activeDiscount + shippingCost);
 
   async function checkout() {
     if (items.length === 0) return;
@@ -222,23 +262,44 @@ function CarrinhoPage() {
               <Link to="/loja"><Button>Ir para a loja</Button></Link>
             </div>
           ) : (
-            <div className="space-y-2">
-              {items.map((i) => (
-                <div key={`${i.productId}::${i.variantId || ""}`} className="glass rounded-xl p-3 flex items-center gap-3">
-                  {i.imageUrl && <img src={i.imageUrl} className="w-16 h-16 rounded object-cover" alt="" />}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{i.name}</div>
-                    {i.variantLabel && <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{i.variantLabel}</div>}
-                    <div className="text-primary text-sm">R$ {i.price.toFixed(2)}</div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                {items.map((i) => (
+                  <div key={`${i.productId}::${i.variantId || ""}`} className="glass rounded-xl p-3 flex items-center gap-3">
+                    {i.imageUrl && <img src={i.imageUrl} className="w-16 h-16 rounded object-cover" alt="" />}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{i.name}</div>
+                      {i.variantLabel && <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{i.variantLabel}</div>}
+                      <div className="text-primary text-sm">R$ {i.price.toFixed(2)}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(i.productId, i.variantId, i.qty - 1)}><Minus className="w-3 h-3" /></Button>
+                      <span className="w-6 text-center text-sm">{i.qty}</span>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(i.productId, i.variantId, i.qty + 1)}><Plus className="w-3 h-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(i.productId, i.variantId)}><Trash className="w-3 h-3" /></Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(i.productId, i.variantId, i.qty - 1)}><Minus className="w-3 h-3" /></Button>
-                    <span className="w-6 text-center text-sm">{i.qty}</span>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(i.productId, i.variantId, i.qty + 1)}><Plus className="w-3 h-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(i.productId, i.variantId)}><Trash className="w-3 h-3" /></Button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              
+              {/* Cupom Input */}
+              <div className="glass rounded-2xl p-4 border border-border/40 flex gap-2 items-center">
+                <Ticket className="w-5 h-5 text-muted-foreground shrink-0" />
+                <Input 
+                  placeholder="Tem um cupom?" 
+                  className="bg-transparent border-none focus-visible:ring-0 shadow-none px-2 uppercase" 
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  disabled={!!appliedCoupon}
+                />
+                {appliedCoupon ? (
+                  <Button variant="ghost" size="sm" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-red-500 hover:text-red-600 hover:bg-red-500/10">Remover</Button>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={handleApplyCoupon} disabled={!couponInput || loadingCoupon}>
+                    {loadingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aplicar"}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -257,6 +318,13 @@ function CarrinhoPage() {
                 <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                   <span>Desconto 1ª Compra (10% OFF)</span>
                   <span>- R$ {firstPurchaseDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {couponDiscount > 0 && appliedCoupon && (
+                <div className="flex justify-between text-primary font-medium">
+                  <span className="flex items-center gap-1"><Ticket className="w-3 h-3"/> Cupom ({appliedCoupon.code})</span>
+                  <span>- R$ {couponDiscount.toFixed(2)}</span>
                 </div>
               )}
 
