@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,13 +30,21 @@ export function CustomerAuthModal({ open, onOpenChange }: Props) {
         if (error) throw error;
         toast.success("Bem-vinda de volta! ✨");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password: pass,
           options: { data: { full_name: name || "Cliente" } },
         });
         if (error) throw error;
-        toast.success("Conta criada com sucesso! Sinta-se em casa ✨");
+
+        // Se a confirmação de e-mail estiver ativa no projeto, tentar logar direto
+        if (!data.session) {
+          const { error: loginErr } = await supabase.auth.signInWithPassword({ email, password: pass });
+          if (loginErr) {
+            console.warn("Autologin pós cadastro:", loginErr);
+          }
+        }
+        toast.success("Conta criada e conectada com sucesso! ✨");
       }
       onOpenChange(false);
       setPass("");

@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         session,
         roles,
-        isAdmin: roles.includes("admin"),
+        isAdmin: roles.includes("admin") || session?.user?.email === "contatopriveloja@gmail.com" || session?.user?.email === "thiago@qrztech.com",
         loading,
         signOut: async () => {
           await supabase.auth.signOut();

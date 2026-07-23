@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +31,12 @@ function PainelCliente() {
       });
   }, [user]);
 
-  if (loading || (!user && !loading)) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -40,7 +44,7 @@ function PainelCliente() {
       <header className="sticky top-0 z-30 glass border-b border-border/30 backdrop-blur">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link to="/loja"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Voltar à loja</Button></Link>
-          <Logo className="h-7 ml-auto" />
+          <Logo className="h-10 md:h-12 ml-auto" />
         </div>
       </header>
 

@@ -213,7 +213,7 @@ function CarrinhoPage() {
       <header className="sticky top-0 z-30 glass border-b border-border/30 backdrop-blur">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link to="/loja"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Continuar comprando</Button></Link>
-          <Logo className="h-7 ml-auto" />
+          <Logo className="h-10 md:h-12 ml-auto" />
         </div>
       </header>
 

@@ -132,23 +132,37 @@ function LojaPage() {
     
     const bodys = pool.length > 0 ? pool : products;
 
-    // Buscar o Amara para garantir como primeiro
-    const amara = bodys.find(p => (p.name || "").toLowerCase().includes("amara") && ((p.name || "").toLowerCase().includes("rubi") || (p.name || "").toLowerCase().includes("vermelho")));
+    // Buscar o Amara para garantir como primeiro com a imagem Rubi
+    const amaraRaw = bodys.find(p => (p.name || "").toLowerCase().includes("amara"));
+    let amara = null;
+    if (amaraRaw) {
+      const rubiImg = amaraRaw.images?.find((i: any) => (i.color_name || "").toLowerCase().includes("rubi"))?.url;
+      amara = {
+        ...amaraRaw,
+        image_url: rubiImg || "https://images.tcdn.com.br/img/img_prod/794909/baby_doll_amara_4328_variacao_25668_4_b4852564e8bc544a4d3e8c4b5c3caa06.jpg"
+      };
+    }
 
     // Filtrar bodys com variação/nome Rubi ou Vermelho (excluindo amara)
     const rubis = bodys.filter((p) => {
-      if (amara && p.id === amara.id) return false;
+      if (amaraRaw && p.id === amaraRaw.id) return false;
       const name = (p.name || "").toLowerCase();
       const vars = p.variants || [];
+      const imgs = p.images || [];
       const hasRubiVar = vars.some((v: any) => 
         (v.color_name || "").toLowerCase().includes("rubi") || 
         (v.color_name || "").toLowerCase().includes("vermelho") ||
         (v.color_name || "").toLowerCase().includes("vinho")
       );
-      return name.includes("rubi") || name.includes("vermelho") || name.includes("vinho") || hasRubiVar;
+      const hasRubiImg = imgs.some((i: any) => 
+        (i.color_name || "").toLowerCase().includes("rubi") || 
+        (i.color_name || "").toLowerCase().includes("vermelho") ||
+        (i.color_name || "").toLowerCase().includes("vinho")
+      );
+      return name.includes("rubi") || name.includes("vermelho") || name.includes("vinho") || hasRubiVar || hasRubiImg;
     });
 
-    const others = bodys.filter((p) => p.id !== amara?.id && !rubis.some(r => r.id === p.id));
+    const others = bodys.filter((p) => p.id !== amaraRaw?.id && !rubis.some(r => r.id === p.id));
 
     // Embaralhar (aleatório) o restante
     const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
@@ -242,7 +256,7 @@ function LojaPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/85 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Link to="/" className="shrink-0"><Logo className="h-9" /></Link>
+          <Link to="/" className="shrink-0"><Logo className="h-12 md:h-14" /></Link>
           <nav className="hidden md:flex items-center gap-6 text-[13px] tracking-wider uppercase text-foreground/70">
             <a href="#colecoes" className="hover:text-primary transition">Coleções</a>
             <a href="#linhas" className="hover:text-primary transition">Linhas</a>
@@ -376,8 +390,9 @@ function LojaPage() {
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentHighlight?.id || highlightIdx}
-                  src={currentHighlight?.image_url || featured[0]?.image_url}
+                  src={currentHighlight?.image_url || featured[0]?.image_url || "https://images.tcdn.com.br/img/img_prod/794909/baby_doll_amara_4328_variacao_25668_4_b4852564e8bc544a4d3e8c4b5c3caa06.jpg"}
                   alt={currentHighlight?.name || "Lingerie Privê"}
+                  referrerPolicy="no-referrer"
                   initial={{ opacity: 0, scale: 1.04 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
@@ -598,7 +613,7 @@ function LojaPage() {
       <footer className="border-t border-border/40 bg-card text-xs">
         <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <Logo className="h-8 mb-3" />
+            <Logo className="h-12 sm:h-14 mb-4" />
             <p className="text-xs text-muted-foreground leading-relaxed">
               Lingerie autoral em renda e seda. Peças exclusivas desenhadas para valorizar sua essência com elegância.
             </p>
