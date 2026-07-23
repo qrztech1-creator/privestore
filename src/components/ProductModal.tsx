@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Heart, Plus, Bell, X, ShoppingBag } from "lucide-react";
@@ -352,59 +353,76 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
         </DialogContent>
       </Dialog>
 
-      {/* FULLSCREEN IMAGE LIGHTBOX MODAL (Z-[9999] para ficar em cima de tudo) */}
-      {fullscreenImageOpen && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setFullscreenImageOpen(false);
-          }}
-        >
-          <button
-            type="button"
+      {/* FULLSCREEN IMAGE LIGHTBOX MODAL (Renderizado via Portal em document.body com isolamento de eventos) */}
+      {fullscreenImageOpen &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[99999] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200 pointer-events-auto"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
               setFullscreenImageOpen(false);
             }}
-            className="absolute top-4 right-4 z-[10000] w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur transition border border-white/30 shadow-lg cursor-pointer"
-            aria-label="Fechar Imagem"
           >
-            <X className="w-7 h-7" />
-          </button>
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setFullscreenImageOpen(false);
+              }}
+              className="absolute top-4 right-4 z-[100000] w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur transition border border-white/30 shadow-2xl cursor-pointer"
+              aria-label="Fechar Imagem Ampliada"
+            >
+              <X className="w-7 h-7 text-white" />
+            </button>
 
-          <div className="relative max-w-full max-h-[80vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <img
-              src={mainImg}
-              alt={product.name}
-              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl transition-all duration-300"
-            />
-          </div>
-
-          {visibleImages.length > 1 && (
-            <div className="flex gap-2 mt-4 max-w-full overflow-x-auto p-2" onClick={(e) => e.stopPropagation()}>
-              {visibleImages.map((im, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setActiveIdx(i);
-                  }}
-                  className={`shrink-0 w-14 h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
-                    activeIdx === i ? "border-primary scale-105 shadow-md" : "border-transparent opacity-50 hover:opacity-100"
-                  }`}
-                >
-                  <img src={im.url} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
+            <div
+              className="relative max-w-full max-h-[78vh] flex items-center justify-center z-[100000]"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                key={mainImg}
+                src={mainImg}
+                alt={product.name}
+                className="max-w-full max-h-[78vh] object-contain rounded-2xl shadow-2xl transition-all duration-300 animate-in fade-in duration-300"
+              />
             </div>
-          )}
-        </div>
-      )}
+
+            {visibleImages.length > 1 && (
+              <div
+                className="flex gap-3 mt-4 max-w-full overflow-x-auto p-2.5 z-[100000] bg-black/40 rounded-2xl backdrop-blur-sm border border-white/10"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {visibleImages.map((im, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setActiveIdx(i);
+                    }}
+                    className={`shrink-0 w-14 h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
+                      activeIdx === i
+                        ? "border-primary scale-105 shadow-xl ring-2 ring-primary/50"
+                        : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={im.url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
