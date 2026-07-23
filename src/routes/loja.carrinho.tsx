@@ -10,6 +10,7 @@ import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 import { ArrowLeft, Minus, Plus, Trash, CreditCard, Sparkles, Truck, Search, Loader2 } from "lucide-react";
 import { createInfinitepayCheckout, createShopOrderServerFn } from "@/lib/infinitepay.functions";
+import { CustomerAuthModal } from "@/components/CustomerAuthModal";
 
 export const Route = createFileRoute("/loja/carrinho")({
   component: CarrinhoPage,
@@ -39,6 +40,7 @@ function CarrinhoPage() {
   
   const [busy, setBusy] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   // Regras de Primeira Compra (10% OFF)
   const [isFirstPurchase, setIsFirstPurchase] = useState<boolean>(false);
@@ -191,11 +193,9 @@ function CarrinhoPage() {
                   <p className="text-[11px] text-muted-foreground">Cadastre-se ou entre na sua conta para ativar o desconto.</p>
                 </div>
               </div>
-              <Link to="/loja">
-                <Button size="sm" variant="outline" className="text-xs shrink-0 border-primary/40 text-primary">
-                  Entrar / Cadastrar
-                </Button>
-              </Link>
+              <Button size="sm" variant="outline" className="text-xs shrink-0 border-primary/40 text-primary" onClick={() => setShowAuth(true)}>
+                Entrar / Cadastrar
+              </Button>
             </div>
           )}
 
@@ -321,6 +321,7 @@ function CarrinhoPage() {
           </aside>
         )}
       </div>
+      <CustomerAuthModal open={showAuth} onOpenChange={setShowAuth} />
     </div>
   );
 }

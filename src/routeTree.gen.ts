@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PainelIndexRouteImport } from './routes/painel.index'
@@ -27,6 +28,11 @@ import { Route as ApiPublicExportRouteImport } from './routes/api.public.export'
 import { Route as AdminEventosIdRouteImport } from './routes/admin.eventos.$id'
 import { Route as ApiPublicWebhooksInfinitepayRouteImport } from './routes/api.public.webhooks.infinitepay'
 
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -38,9 +44,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PainelIndexRoute = PainelIndexRouteImport.update({
-  id: '/painel/',
-  path: '/painel/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => PainelRoute,
 } as any)
 const LojaIndexRoute = LojaIndexRouteImport.update({
   id: '/loja/',
@@ -117,6 +123,7 @@ const ApiPublicWebhooksInfinitepayRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/painel': typeof PainelRouteWithChildren
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
@@ -156,6 +163,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/painel': typeof PainelRouteWithChildren
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/linhas': typeof AdminLinhasRoute
   '/admin/pedidos': typeof AdminPedidosRoute
@@ -177,6 +185,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/painel'
     | '/admin/categorias'
     | '/admin/linhas'
     | '/admin/pedidos'
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/painel'
     | '/admin/categorias'
     | '/admin/linhas'
     | '/admin/pedidos'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  PainelRoute: typeof PainelRouteWithChildren
   AdminCategoriasRoute: typeof AdminCategoriasRoute
   AdminLinhasRoute: typeof AdminLinhasRoute
   AdminPedidosRoute: typeof AdminPedidosRoute
@@ -245,7 +256,6 @@ export interface RootRouteChildren {
   NSlugRoute: typeof NSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   LojaIndexRoute: typeof LojaIndexRoute
-  PainelIndexRoute: typeof PainelIndexRoute
   AdminEventosIdRoute: typeof AdminEventosIdRoute
   ApiPublicExportRoute: typeof ApiPublicExportRoute
   AdminEventosIndexRoute: typeof AdminEventosIndexRoute
@@ -254,6 +264,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -270,10 +287,10 @@ declare module '@tanstack/react-router' {
     }
     '/painel/': {
       id: '/painel/'
-      path: '/painel'
+      path: '/'
       fullPath: '/painel/'
       preLoaderRoute: typeof PainelIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof PainelRoute
     }
     '/loja/': {
       id: '/loja/'
@@ -376,9 +393,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PainelRouteChildren {
+  PainelIndexRoute: typeof PainelIndexRoute
+}
+
+const PainelRouteChildren: PainelRouteChildren = {
+  PainelIndexRoute: PainelIndexRoute,
+}
+
+const PainelRouteWithChildren =
+  PainelRoute._addFileChildren(PainelRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  PainelRoute: PainelRouteWithChildren,
   AdminCategoriasRoute: AdminCategoriasRoute,
   AdminLinhasRoute: AdminLinhasRoute,
   AdminPedidosRoute: AdminPedidosRoute,
@@ -389,7 +418,6 @@ const rootRouteChildren: RootRouteChildren = {
   NSlugRoute: NSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   LojaIndexRoute: LojaIndexRoute,
-  PainelIndexRoute: PainelIndexRoute,
   AdminEventosIdRoute: AdminEventosIdRoute,
   ApiPublicExportRoute: ApiPublicExportRoute,
   AdminEventosIndexRoute: AdminEventosIndexRoute,

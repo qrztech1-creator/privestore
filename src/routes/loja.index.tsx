@@ -123,17 +123,21 @@ function LojaPage() {
   const bodyProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
     
-    const bodys = products.filter((p) => {
+    const pool = products.filter((p) => {
       const name = (p.name || "").toLowerCase();
       const cat = (p.category_name || "").toLowerCase();
       const slug = (p.category_slug || "").toLowerCase();
-      return cat.includes("body") || cat.includes("acessorios") || name.includes("body") || slug.includes("acessorios");
+      return cat.includes("body") || cat.includes("acessorios") || name.includes("body") || slug.includes("acessorios") || name.includes("amara");
     });
     
-    const pool = bodys.length > 0 ? bodys : products;
+    const bodys = pool.length > 0 ? pool : products;
 
-    // Filtrar bodys com variação/nome Rubi ou Vermelho
-    const rubis = pool.filter((p) => {
+    // Buscar o Amara para garantir como primeiro
+    const amara = bodys.find(p => (p.name || "").toLowerCase().includes("amara") && ((p.name || "").toLowerCase().includes("rubi") || (p.name || "").toLowerCase().includes("vermelho")));
+
+    // Filtrar bodys com variação/nome Rubi ou Vermelho (excluindo amara)
+    const rubis = bodys.filter((p) => {
+      if (amara && p.id === amara.id) return false;
       const name = (p.name || "").toLowerCase();
       const vars = p.variants || [];
       const hasRubiVar = vars.some((v: any) => 
@@ -144,11 +148,16 @@ function LojaPage() {
       return name.includes("rubi") || name.includes("vermelho") || name.includes("vinho") || hasRubiVar;
     });
 
-    const others = pool.filter((p) => !rubis.includes(p));
+    const others = bodys.filter((p) => p.id !== amara?.id && !rubis.some(r => r.id === p.id));
 
-    // Ordenação harmônica: primeiros 3 em cor Rubi (se existirem), depois alterna com as demais cores
-    const ordered = [...rubis.slice(0, 3), ...others, ...rubis.slice(3)];
-    return ordered.length > 0 ? ordered : pool;
+    // Embaralhar (aleatório) o restante
+    const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
+    const shuffledRubis = [...rubis].sort(() => Math.random() - 0.5);
+
+    // Ordem: 1º Amara Rubi, próximos 2 rubis (para totalizar 3 rubis), e depois tudo misturado aleatoriamente
+    const firstItems = amara ? [amara] : [];
+    const ordered = [...firstItems, ...shuffledRubis.slice(0, 3 - firstItems.length), ...shuffledOthers, ...shuffledRubis.slice(3 - firstItems.length)];
+    return ordered.length > 0 ? ordered : bodys;
   }, [products]);
 
   const [highlightIdx, setHighlightIdx] = useState(0);
@@ -364,7 +373,6 @@ function LojaPage() {
               onClick={() => currentHighlight && handleOpenModal(currentHighlight)}
               className="relative aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl group cursor-pointer border border-border/40"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/30 to-gold/20" />
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentHighlight?.id || highlightIdx}
