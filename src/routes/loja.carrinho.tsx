@@ -90,22 +90,6 @@ function CarrinhoPage() {
     }
   }
 
-  function handleWhatsAppCheckout() {
-    if (items.length === 0) return;
-    const storePhone = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
-    const itemsList = items
-      .map(
-        (i) =>
-          `• ${i.qty}x ${i.name} ${i.variantLabel ? `(${i.variantLabel})` : ""} - R$ ${(i.price * i.qty).toFixed(2)}`
-      )
-      .join("\n");
-    const addressStr = address ? `${address}${city ? `, ${city}` : ""}${state ? `/${state}` : ""}${zip ? ` - CEP ${zip}` : ""}` : "A combinar";
-
-    const text = `Olá Privê! Gostaria de finalizar meu pedido:\n\n${itemsList}\n\n*Total: R$ ${total.toFixed(2)}*\n\n*Dados do Cliente:*\nNome: ${name || "Cliente"}\nEmail: ${email || "Não informado"}\nTelefone: ${phone || "Não informado"}\nEndereço: ${addressStr}${msg ? `\nObservação: ${msg}` : ""}`;
-
-    window.open(`https://wa.me/${storePhone}?text=${encodeURIComponent(text)}`, "_blank");
-  }
-
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 glass border-b border-border/30 backdrop-blur">
@@ -164,25 +148,18 @@ function CarrinhoPage() {
               <Textarea placeholder="Observações do pedido (opcional)" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
             </div>
 
-            <div className="pt-3 border-t border-border/30 space-y-2.5">
+            <div className="pt-3 border-t border-border/30 space-y-2">
               <Button
                 disabled={busy}
                 onClick={checkout}
-                className="w-full py-3 font-medium shadow-md transition bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-glow"
+                className="w-full py-3.5 font-medium shadow-md transition bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-glow"
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                {busy ? "Redirecionando..." : "Cartão, PIX ou Checkout Transparente"}
+                {busy ? "Gerando Pagamento..." : "Finalizar Compra (Cartão ou PIX)"}
               </Button>
-
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={handleWhatsAppCheckout}
-                className="w-full py-2.5 font-medium transition border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
-              >
-                <MessageCircle className="w-4 h-4 mr-2 text-emerald-500" />
-                Finalizar no WhatsApp com a Loja
-              </Button>
+              <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+                🔒 Pagamento instantâneo e seguro via InfinitePay.
+              </p>
             </div>
           </aside>
         )}
