@@ -30,11 +30,27 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
 
   useEffect(() => {
     if (open) {
-      setColor(colors[0] || null);
+      // Garante que o lightbox fullscreen SEMPRE inicia fechado ao abrir o produto
+      setFullscreenImageOpen(false);
+
+      // Detecta a cor correspondente à imagem exibida (ex: variante Rubi vinda do carrossel/card)
+      const targetUrl = product?.image_url?.toLowerCase() || "";
+      const matchingImgColor = images.find(
+        (i) => i.url && targetUrl && i.url.toLowerCase() === targetUrl
+      )?.color_name;
+      const matchingVarColor = variants.find(
+        (v) => v.image_url && targetUrl && v.image_url.toLowerCase() === targetUrl
+      )?.color_name;
+      const colorInUrl = colors.find(
+        (c) => targetUrl && targetUrl.includes(c.toLowerCase())
+      );
+
+      const initialColor = matchingImgColor || matchingVarColor || colorInUrl || colors[0] || null;
+      setColor(initialColor);
       setSize(null);
       setActiveIdx(0);
     }
-  }, [open, product?.id, colors]);
+  }, [open, product?.id, product?.image_url, colors, images, variants]);
 
   const dbSizes = Array.from(
     new Set(variants.filter((v) => !color || v.color_name === color).map((v) => v.size).filter(Boolean))
@@ -46,6 +62,9 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
     const list: { url: string }[] = [];
     if (color) images.filter((i) => i.color_name === color).forEach((i) => list.push({ url: i.url }));
     images.filter((i) => !i.color_name).forEach((i) => list.push({ url: i.url }));
+    if (product?.image_url && !list.some((i) => i.url === product.image_url)) {
+      list.unshift({ url: product.image_url });
+    }
     if (list.length === 0 && product?.image_url) list.push({ url: product.image_url });
     return list;
   }, [images, color, product?.image_url]);
@@ -337,22 +356,30 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
       {fullscreenImageOpen && (
         <div
           className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setFullscreenImageOpen(false)}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setFullscreenImageOpen(false);
+          }}
         >
           <button
             type="button"
-            onClick={() => setFullscreenImageOpen(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setFullscreenImageOpen(false);
+            }}
             className="absolute top-4 right-4 z-[10000] w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur transition border border-white/30 shadow-lg cursor-pointer"
             aria-label="Fechar Imagem"
           >
             <X className="w-7 h-7" />
           </button>
 
-          <div className="relative max-w-full max-h-[82vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-full max-h-[80vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
             <img
               src={mainImg}
               alt={product.name}
-              className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl"
+              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl transition-all duration-300"
             />
           </div>
 
@@ -362,9 +389,13 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setActiveIdx(i)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setActiveIdx(i);
+                  }}
                   className={`shrink-0 w-14 h-16 rounded-xl overflow-hidden border-2 transition cursor-pointer ${
-                    activeIdx === i ? "border-primary scale-105 shadow-md" : "border-transparent opacity-50"
+                    activeIdx === i ? "border-primary scale-105 shadow-md" : "border-transparent opacity-50 hover:opacity-100"
                   }`}
                 >
                   <img src={im.url} alt="" className="w-full h-full object-cover" />
