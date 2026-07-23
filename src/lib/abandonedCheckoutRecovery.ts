@@ -173,7 +173,7 @@ export function generateCustomerRecoveryEmailHTML(order: OrderWithDetails): stri
       </div>
 
       <p style="color: #888; font-size: 12px; margin-top: 30px;">
-        Privê — Ateliê de Lingerie Autoral. Envio discreto para todo o Brasil.
+        Privê — Ateliê de Lingerie Autoral. Envio Direto com Rastreio para todo o Brasil.
       </p>
     </div>
   </body>

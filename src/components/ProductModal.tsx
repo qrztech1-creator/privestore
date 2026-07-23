@@ -88,19 +88,19 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl p-0 overflow-hidden bg-card border-border/60">
+      <DialogContent className="max-w-4xl p-0 overflow-y-auto max-h-[92vh] md:max-h-[85vh] bg-card border-border/60 rounded-3xl">
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-20 bg-background/80 backdrop-blur rounded-full p-2 hover:bg-background transition"
+          className="absolute top-3 right-3 z-30 bg-background/80 backdrop-blur rounded-full p-2 hover:bg-background transition border border-border/40"
           aria-label="Fechar"
         >
           <X className="w-4 h-4" />
         </button>
-        <div className="grid md:grid-cols-2 max-h-[90vh]">
+        <div className="grid md:grid-cols-2">
           <div className="bg-secondary/50 flex flex-col">
             <div
               ref={imgRef}
-              className="relative aspect-[4/5] overflow-hidden cursor-zoom-in bg-secondary"
+              className="relative aspect-square md:aspect-[4/5] max-h-[350px] md:max-h-none overflow-hidden cursor-zoom-in bg-secondary"
               onMouseMove={onMove}
               onMouseEnter={onMove}
               onMouseLeave={() => setZoom(null)}
@@ -124,13 +124,13 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
               )}
             </div>
             {visibleImages.length > 1 && (
-              <div className="flex gap-2 p-3 overflow-x-auto">
+              <div className="flex gap-2 p-3 overflow-x-auto border-t border-border/30">
                 {visibleImages.map((im, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveIdx(i)}
-                    className={`shrink-0 w-16 h-20 rounded-md overflow-hidden border-2 transition ${
-                      activeIdx === i ? "border-primary" : "border-transparent"
+                    className={`shrink-0 w-14 h-16 md:w-16 md:h-20 rounded-md overflow-hidden border-2 transition ${
+                      activeIdx === i ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
                     }`}
                   >
                     <img src={im.url} alt="" className="w-full h-full object-cover" />
@@ -140,23 +140,23 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
             )}
           </div>
 
-          <div className="p-6 md:p-8 overflow-y-auto space-y-5">
+          <div className="p-5 sm:p-6 md:p-8 space-y-5">
             <div>
               <div className="text-[10px] uppercase tracking-[0.3em] text-primary/70">
                 {product.line_name || product.category_name || "Coleção"}
               </div>
-              <h2 className="font-display text-3xl md:text-4xl mt-1">{product.name}</h2>
-              <div className="text-primary font-display text-3xl mt-3">R$ {price.toFixed(2)}</div>
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl mt-1">{product.name}</h2>
+              <div className="text-primary font-display text-2xl sm:text-3xl mt-2">R$ {price.toFixed(2)}</div>
             </div>
 
             {product.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{product.description}</p>
             )}
 
             {colors.length > 0 && (
               <div>
                 <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">
-                  Cor {color && <span className="text-foreground">· {color}</span>}
+                  Cor {color && <span className="text-foreground font-semibold">· {color}</span>}
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {colors.map((c) => {
@@ -173,7 +173,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                         disabled={!avail}
                         title={c}
                         className={`w-8 h-8 rounded-full border-2 transition ${
-                          color === c ? "border-primary scale-110" : "border-border"
+                          color === c ? "border-primary scale-110 shadow-sm" : "border-border"
                         } ${!avail ? "opacity-30" : ""}`}
                         style={{ background: hex }}
                       />
@@ -186,7 +186,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
             {sizes.length > 0 && (
               <div>
                 <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">
-                  Tamanho {size && <span className="text-foreground">· {size}</span>}
+                  Tamanho {size && <span className="text-foreground font-semibold">· {size}</span>}
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {sizes.map((s) => {
@@ -201,7 +201,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                         disabled={!!so}
                         className={`min-w-11 h-11 px-3 rounded-md border text-sm uppercase tracking-wider transition ${
                           size === s
-                            ? "bg-primary text-primary-foreground border-primary"
+                            ? "bg-primary text-primary-foreground border-primary font-bold shadow-sm"
                             : "border-border hover:border-primary/50"
                         } ${so ? "opacity-30 line-through" : ""}`}
                       >
@@ -237,7 +237,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                       });
                       toast.success("Adicionado ao carrinho");
                     }}
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground tracking-wider uppercase text-xs"
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground tracking-wider uppercase text-xs shadow-md"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     {needsColor ? "Escolha uma cor" : needsSize ? "Escolha o tamanho" : "Adicionar ao carrinho"}
@@ -249,7 +249,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                     </Button>
                     <a
                       href="/loja/carrinho"
-                      className="inline-flex items-center justify-center h-11 rounded-md border border-border hover:border-primary/50 text-sm"
+                      className="inline-flex items-center justify-center h-11 rounded-md border border-border hover:border-primary/50 text-xs font-medium uppercase tracking-wider transition"
                     >
                       <ShoppingBag className="w-4 h-4 mr-2" /> Ver carrinho
                     </a>
@@ -257,7 +257,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                 </>
               )}
               <p className="text-[11px] text-muted-foreground text-center pt-1">
-                Envio discreto · PIX com 5% OFF · Troca em até 7 dias
+                Envio Direto com Rastreio · PIX com 5% OFF · Troca em até 7 dias
               </p>
             </div>
           </div>

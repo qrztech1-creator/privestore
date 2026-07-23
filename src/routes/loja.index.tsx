@@ -166,7 +166,7 @@ function LojaPage() {
   // Destaque do topo da Home (Hero Banner Slider):
   // 1º slide: Baby Doll Amara na cor Rubi
   // 2º e 3º slides: Outros 2 bodys na tonalidade Rubi/Vermelho/Vinho (com a imagem dessa variação de cor)
-  // 4º em diante: Aleatório (modelos e variações de cores misturados)
+  // 4º em diante: Aleatório determinístico (modelos e variações de cores misturados de forma constante, sem piscar no mobile)
   const bodyProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
     
@@ -180,25 +180,22 @@ function LojaPage() {
     
     const bodys = pool.length > 0 ? pool : products;
 
-    // Helper para buscar a melhor imagem de um produto baseado em palavras-chave de cor ou aleatória
+    // Helper determinístico para buscar imagem sem causar re-renders ou re-fetches
     const findProductImage = (p: any, colorKeywords?: string[]) => {
       const imgs = p.images || [];
       const vars = p.variants || [];
       
       if (colorKeywords && colorKeywords.length > 0) {
-        // 1. Procurar nas imagens do produto
         for (const kw of colorKeywords) {
           const foundImg = imgs.find((i: any) => (i.color_name || "").toLowerCase().includes(kw));
           if (foundImg?.url) return foundImg.url;
         }
-        // 2. Procurar nas variantes do produto
         for (const kw of colorKeywords) {
           const foundVar = vars.find((v: any) => (v.color_name || "").toLowerCase().includes(kw));
           if (foundVar?.image_url) return foundVar.image_url;
         }
       }
       
-      // Se não houver filtro de cor ou não encontrar a cor específica, pegar uma imagem de variante aleatória ou p.image_url
       const allImgs: string[] = [];
       if (p.image_url) allImgs.push(p.image_url);
       imgs.forEach((i: any) => i.url && allImgs.push(i.url));
@@ -206,10 +203,15 @@ function LojaPage() {
 
       const uniqueImgs = Array.from(new Set(allImgs));
       if (uniqueImgs.length > 0) {
-        return uniqueImgs[Math.floor(Math.random() * uniqueImgs.length)];
+        // Hash determinístico baseado no ID do produto (permanente, não muda entre re-renders)
+        const hash = (p.id || "").split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        return uniqueImgs[hash % uniqueImgs.length];
       }
       return p.image_url;
     };
+
+    // Função auxiliar para ordenação determinística (estável)
+    const getHash = (id: string) => (id || "").split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
 
     // 1. Buscar o Amara para garantir como 1º slide na cor Rubi
     const amaraRaw = bodys.find(p => (p.name || "").toLowerCase().includes("amara"));
@@ -237,44 +239,33 @@ function LojaPage() {
       return name.includes("rubi") || name.includes("vermelho") || name.includes("vinho") || hasRubiVar || hasRubiImg;
     });
 
-    // Mapear cada candidato rubi garantindo que o slide use a imagem da versão RUBI/VERMELHO
-    const rubiSlides = rubiCandidates.map((p) => {
-      const rubiImg = findProductImage(p, ["rubi", "vermelho", "vinho"]);
-      return {
-        ...p,
-        image_url: rubiImg || p.image_url
-      };
-    });
+    const rubiSlides = rubiCandidates.map((p) => ({
+      ...p,
+      image_url: findProductImage(p, ["rubi", "vermelho", "vinho"]) || p.image_url
+    }));
 
-    // Embaralhar as opções rubi restantes
-    const shuffledRubiSlides = [...rubiSlides].sort(() => Math.random() - 0.5);
-    const initialRubiItems = shuffledRubiSlides.slice(0, amaraSlide ? 2 : 3);
+    // Ordenar deterministicamente
+    const sortedRubiSlides = [...rubiSlides].sort((a, b) => getHash(a.id) - getHash(b.id));
+    const initialRubiItems = sortedRubiSlides.slice(0, amaraSlide ? 2 : 3);
 
-    // IDs já utilizados nos 3 primeiros slides
     const usedIds = new Set<string>();
     if (amaraRaw) usedIds.add(amaraRaw.id);
     initialRubiItems.forEach(item => usedIds.add(item.id));
 
-    // 3. Demais bodys/produtos para o restante da rotação (ALEATÓRIO de modelo e cor)
+    // 3. Demais bodys/produtos para o restante da rotação
     const remainingProducts = bodys.filter(p => !usedIds.has(p.id));
 
-    // Criar slides com cores/variantes aleatórias para o restante
-    const randomSlides = remainingProducts.map((p) => {
-      const randomImg = findProductImage(p);
-      return {
-        ...p,
-        image_url: randomImg
-      };
-    });
+    const randomSlides = remainingProducts.map((p) => ({
+      ...p,
+      image_url: findProductImage(p)
+    }));
 
-    // Embaralhar aleatoriamente todo o restante
-    const shuffledRandom = [...randomSlides].sort(() => Math.random() - 0.5);
+    const sortedRandom = [...randomSlides].sort((a, b) => getHash(b.id) - getHash(a.id));
 
-    // Lista final: 1º Amara Rubi, 2º e 3º Bodys Rubi/Vermelho, 4º em diante Aleatório
     const finalSlides = [
       ...(amaraSlide ? [amaraSlide] : []),
       ...initialRubiItems,
-      ...shuffledRandom
+      ...sortedRandom
     ];
 
     return finalSlides.length > 0 ? finalSlides : bodys;
@@ -314,18 +305,28 @@ function LojaPage() {
     addRecentlyViewed(product.id);
   }
 
-
   const waHref = `https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Vim da loja Privê 💌")}`;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Announcement bar */}
-      <div className="bg-primary text-primary-foreground text-[11px] sm:text-xs tracking-[0.2em] uppercase py-2 text-center">
-        <span className="opacity-80">Frete grátis acima de R$ 299</span>
-        <span className="mx-3 opacity-40">·</span>
-        <span>PIX com 5% OFF</span>
-        <span className="mx-3 opacity-40 hidden sm:inline">·</span>
-        <span className="hidden sm:inline opacity-80">Entrega discreta em todo Brasil</span>
+      {/* Announcement bar — Marquee 360° Infinito */}
+      <div className="bg-primary text-primary-foreground text-[11px] sm:text-xs tracking-[0.2em] uppercase py-2.5 overflow-hidden whitespace-nowrap relative select-none">
+        <div className="inline-flex animate-marquee gap-8 items-center font-medium">
+          {[0, 1, 2, 3].flatMap((loopIdx) => [
+            <span key={`a-${loopIdx}`} className="inline-flex items-center gap-2">
+              🚚 FRETE GRÁTIS ACIMA DE R$ 299
+            </span>,
+            <span key={`sep1-${loopIdx}`} className="opacity-40">·</span>,
+            <span key={`b-${loopIdx}`} className="inline-flex items-center gap-2">
+              ⚡ PIX COM 5% OFF
+            </span>,
+            <span key={`sep2-${loopIdx}`} className="opacity-40">·</span>,
+            <span key={`c-${loopIdx}`} className="inline-flex items-center gap-2">
+              📦 ENVIO DIRETO COM RASTREIO EM TODO BRASIL
+            </span>,
+            <span key={`sep3-${loopIdx}`} className="opacity-40">·</span>,
+          ])}
+        </div>
       </div>
 
       {/* Header */}
@@ -513,7 +514,7 @@ function LojaPage() {
       <section className="border-y border-border/40 bg-secondary/40">
         <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
           {[
-            { Icon: Truck, t: "Envio discreto", s: "Para todo Brasil" },
+            { Icon: Truck, t: "Envio Direto com Rastreio", s: "Para todo Brasil" },
             { Icon: ShieldCheck, t: "Pagamento seguro", s: "PIX, cartão ou WhatsApp" },
             { Icon: RefreshCw, t: "Troca fácil", s: "Até 7 dias" },
             { Icon: Sparkles, t: "Peças autorais", s: "Produção limitada" },
@@ -819,7 +820,7 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay }} className="bg-card rounded-2xl overflow-hidden group border border-border/40 hover:border-primary/40 hover:shadow-xl transition">
+    <motion.div initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.01 }} transition={{ duration: 0.25 }} className="bg-card rounded-2xl overflow-hidden group border border-border/40 hover:border-primary/40 hover:shadow-xl transition">
       <div className="aspect-[4/5] bg-secondary overflow-hidden relative">
         <button
           type="button"
