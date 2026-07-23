@@ -7,11 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, MessageCircle, Minus, Plus, Trash, QrCode, CreditCard, Sparkles } from "lucide-react";
-import pixQr from "@/assets/pix-qr.jpeg";
+import { ArrowLeft, Minus, Plus, Trash, CreditCard, QrCode } from "lucide-react";
 import { createInfinitepayCheckout, createShopOrderServerFn } from "@/lib/infinitepay.functions";
-
-const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
 
 export const Route = createFileRoute("/loja/carrinho")({
   component: CarrinhoPage,
@@ -20,7 +17,7 @@ export const Route = createFileRoute("/loja/carrinho")({
   }),
 });
 
-type PayMethod = "infinitepay" | "pix" | "whatsapp";
+type PayMethod = "infinitepay";
 
 function CarrinhoPage() {
   const { user } = useAuth();
@@ -39,9 +36,7 @@ function CarrinhoPage() {
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [msg, setMsg] = useState("");
-  const [method, setMethod] = useState<PayMethod>("infinitepay");
   const [busy, setBusy] = useState(false);
-  const [pixOrderId, setPixOrderId] = useState<string | null>(null);
 
   async function checkout() {
     if (items.length === 0) return;
@@ -62,7 +57,7 @@ function CarrinhoPage() {
           address_zip: zip || null,
           message: msg || null,
           total,
-          payment_provider: method,
+          payment_provider: "infinitepay",
           items: items.map((i) => ({
             productId: i.productId,
             variantId: i.variantId || null,
@@ -74,80 +69,28 @@ function CarrinhoPage() {
         },
       });
 
-      // Fluxo 1: Pagamento via InfinitePay (Cartão de Crédito ou PIX Online)
-      if (method === "infinitepay") {
-        const res = await createInfinitepayCheckout({
-          data: {
-            order_id: order.id,
-            success_url: `${window.location.origin}/loja?pagamento=sucesso`,
-            cancel_url: `${window.location.origin}/loja/carrinho`,
-          },
-        });
+      const res = await createInfinitepayCheckout({
+        data: {
+          order_id: order.id,
+          success_url: `${window.location.origin}/loja?pagamento=sucesso`,
+          cancel_url: `${window.location.origin}/loja/carrinho`,
+        },
+      });
 
-        if (res.ok && res.url) {
-          clear();
-          setBusy(false);
-          toast.success("Redirecionando para o pagamento seguro na InfinitePay...");
-          window.location.href = res.url;
-          return;
-        }
-      }
-
-      // Preparar texto formatado do WhatsApp (para opções PIX direto ou WhatsApp)
-      const linhas = items.map((i) => {
-        const label = i.variantLabel ? ` (${i.variantLabel})` : "";
-        return `• ${i.qty}× ${i.name}${label} — R$ ${(i.price * i.qty).toFixed(2)}`;
-      }).join("\n");
-      const enderecoLinhas = [
-        address && `Endereço: ${address}`,
-        (city || state) && `Cidade/UF: ${city || "-"}/${state || "-"}`,
-        zip && `CEP: ${zip}`,
-      ].filter(Boolean).join("\n");
-      const metodoLabel = method === "pix" ? "PIX (Comprovante)" : "Combinar no WhatsApp";
-      const texto =
-        `*Novo pedido — Loja Privê*\n\n` +
-        `*Pedido:* ${order.id.slice(0, 8).toUpperCase()}\n` +
-        `*Cliente:* ${name}\n` +
-        `*Email:* ${email}\n` +
-        (phone ? `*WhatsApp:* ${phone}\n` : "") +
-        `*Forma de pagamento:* ${metodoLabel}\n` +
-        (enderecoLinhas ? `\n${enderecoLinhas}\n` : "") +
-        `\n*Itens:*\n${linhas}\n\n` +
-        `*Total: R$ ${total.toFixed(2)}*\n` +
-        (msg ? `\n_Observações:_ ${msg}\n` : "") +
-        (method === "pix"
-          ? `\n💠 Paguei via PIX — segue o comprovante em anexo.`
-          : `\nAguardo instruções para pagamento. 💝`);
-
-      const waUrl = `https://wa.me/${STORE_WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(texto)}`;
-
-      // Fluxo 2: PIX Direto da Loja
-      if (method === "pix") {
-        setPixOrderId(order.id);
+      if (res.ok && res.url) {
+        clear();
         setBusy(false);
-        toast.success("Pedido registrado! Escaneie o QR do PIX abaixo.");
-        (window as any).__prive_wa = waUrl;
+        toast.success("Redirecionando para o pagamento seguro na InfinitePay...");
+        window.location.href = res.url;
         return;
       }
-
-      // Fluxo 3: Combinar via WhatsApp
-      clear();
-      setBusy(false);
-      toast.success("Pedido registrado! Abrindo WhatsApp...");
-      window.open(waUrl, "_blank");
-      navigate({ to: "/loja" });
+      
+      throw new Error(res.error || "Erro ao gerar checkout");
     } catch (err: any) {
       console.error("Erro ao finalizar pedido:", err);
       setBusy(false);
       toast.error(err.message || "Erro ao processar o pedido.");
     }
-  }
-
-  function openWhatsappAfterPix() {
-    const url = (window as any).__prive_wa;
-    clear();
-    if (url) window.open(url, "_blank");
-    navigate({ to: "/loja" });
   }
 
   return (
@@ -162,22 +105,10 @@ function CarrinhoPage() {
       <div className="max-w-4xl mx-auto px-4 py-8 grid lg:grid-cols-[1fr_400px] gap-6">
         <div>
           <h1 className="font-display text-3xl mb-4">Seu carrinho</h1>
-          {items.length === 0 && !pixOrderId ? (
+          {items.length === 0 ? (
             <div className="glass rounded-2xl p-10 text-center">
               <p className="text-muted-foreground mb-4">Carrinho vazio.</p>
               <Link to="/loja"><Button>Ir para a loja</Button></Link>
-            </div>
-          ) : pixOrderId ? (
-            <div className="glass rounded-2xl p-6 text-center space-y-4">
-              <h2 className="font-display text-2xl">Pague com PIX</h2>
-              <p className="text-sm text-muted-foreground">Escaneie o QR abaixo no app do seu banco. Depois clique no botão para confirmar o comprovante pelo WhatsApp.</p>
-              <img src={pixQr} alt="QR Code PIX" className="w-64 h-64 mx-auto rounded-xl bg-white p-3" />
-              <div className="text-xs text-muted-foreground">
-                Total: <span className="text-primary font-display text-lg">R$ {total.toFixed(2)}</span>
-              </div>
-              <Button onClick={openWhatsappAfterPix} className="bg-[#25D366] hover:bg-[#1faa55] text-white w-full">
-                <MessageCircle className="w-4 h-4 mr-2" />Já paguei — enviar comprovante
-              </Button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -201,7 +132,7 @@ function CarrinhoPage() {
           )}
         </div>
 
-        {items.length > 0 && !pixOrderId && (
+        {items.length > 0 && (
           <aside className="glass rounded-2xl p-5 h-fit lg:sticky lg:top-24 space-y-3">
             <h2 className="font-display text-2xl">Finalizar Pedido</h2>
             <div className="flex justify-between font-display text-xl">
@@ -221,74 +152,18 @@ function CarrinhoPage() {
             </div>
 
             <div className="pt-2 border-t border-border/30">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Forma de pagamento</div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setMethod("infinitepay")}
-                  className={`text-xs rounded-xl border p-2 flex flex-col items-center gap-1.5 transition ${
-                    method === "infinitepay" ? "border-primary bg-primary/15 font-semibold text-primary" : "border-border/40 hover:bg-white/5"
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4 text-primary" />
-                  <span>InfinitePay</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMethod("pix")}
-                  className={`text-xs rounded-xl border p-2 flex flex-col items-center gap-1.5 transition ${
-                    method === "pix" ? "border-primary bg-primary/15 font-semibold text-primary" : "border-border/40 hover:bg-white/5"
-                  }`}
-                >
-                  <QrCode className="w-4 h-4" />
-                  <span>PIX Direto</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMethod("whatsapp")}
-                  className={`text-xs rounded-xl border p-2 flex flex-col items-center gap-1.5 transition ${
-                    method === "whatsapp" ? "border-primary bg-primary/15 font-semibold text-primary" : "border-border/40 hover:bg-white/5"
-                  }`}
-                >
-                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                  <span>WhatsApp</span>
-                </button>
-              </div>
-
               <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                {method === "infinitepay" && "Pagamento online instantâneo e seguro via InfinitePay (Cartão ou PIX)."}
-                {method === "pix" && "Pague diretamente com o QR Code da loja e envie o comprovante."}
-                {method === "whatsapp" && "Combine o pedido e pagamento via atendimento no WhatsApp."}
+                Pagamento online instantâneo e seguro via InfinitePay (Cartão ou PIX).
               </p>
             </div>
 
             <Button
               disabled={busy}
               onClick={checkout}
-              className={`w-full py-2.5 font-medium shadow-md transition ${
-                method === "whatsapp"
-                  ? "bg-[#25D366] hover:bg-[#1faa55] text-white"
-                  : "bg-primary text-primary-foreground hover:opacity-90 shadow-glow"
-              }`}
+              className="w-full py-2.5 font-medium shadow-md transition bg-primary text-primary-foreground hover:opacity-90 shadow-glow"
             >
-              {method === "infinitepay" && (
-                <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  {busy ? "Redirecionando..." : "Pagar com InfinitePay"}
-                </>
-              )}
-              {method === "pix" && (
-                <>
-                  <QrCode className="w-4 h-4 mr-2" />
-                  {busy ? "Gerando PIX..." : "Gerar QR Code PIX"}
-                </>
-              )}
-              {method === "whatsapp" && (
-                <>
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  {busy ? "Enviando..." : "Combinar no WhatsApp"}
-                </>
-              )}
+              <CreditCard className="w-4 h-4 mr-2" />
+              {busy ? "Redirecionando..." : "Finalizar com Cartão ou PIX"}
             </Button>
           </aside>
         )}
