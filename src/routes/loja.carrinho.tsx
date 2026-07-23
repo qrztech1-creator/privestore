@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Trash, CreditCard, QrCode } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash, CreditCard, QrCode, MessageCircle } from "lucide-react";
 import { createInfinitepayCheckout, createShopOrderServerFn } from "@/lib/infinitepay.functions";
 
 export const Route = createFileRoute("/loja/carrinho")({
@@ -16,8 +16,6 @@ export const Route = createFileRoute("/loja/carrinho")({
     meta: [{ title: "Carrinho — Loja Privê" }, { name: "robots", content: "noindex" }],
   }),
 });
-
-type PayMethod = "infinitepay";
 
 function CarrinhoPage() {
   const { user } = useAuth();
@@ -40,11 +38,10 @@ function CarrinhoPage() {
 
   async function checkout() {
     if (items.length === 0) return;
-    if (!name || !email) return toast.error("Preencha nome e email");
+    if (!name || !email) return toast.error("Preencha seu nome e e-mail para prosseguir.");
     setBusy(true);
 
     try {
-      // Usa função do servidor para ignorar RLS e garantir permissão total
       const order = await createShopOrderServerFn({
         data: {
           customer_id: user?.id || null,
@@ -80,17 +77,33 @@ function CarrinhoPage() {
       if (res.ok && res.url) {
         clear();
         setBusy(false);
-        toast.success("Redirecionando para o pagamento seguro na InfinitePay...");
+        toast.success("Redirecionando para o pagamento seguro...");
         window.location.href = res.url;
         return;
       }
-      
+
       throw new Error(res.error || "Erro ao gerar checkout");
     } catch (err: any) {
       console.error("Erro ao finalizar pedido:", err);
       setBusy(false);
       toast.error(err.message || "Erro ao processar o pedido.");
     }
+  }
+
+  function handleWhatsAppCheckout() {
+    if (items.length === 0) return;
+    const storePhone = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
+    const itemsList = items
+      .map(
+        (i) =>
+          `• ${i.qty}x ${i.name} ${i.variantLabel ? `(${i.variantLabel})` : ""} - R$ ${(i.price * i.qty).toFixed(2)}`
+      )
+      .join("\n");
+    const addressStr = address ? `${address}${city ? `, ${city}` : ""}${state ? `/${state}` : ""}${zip ? ` - CEP ${zip}` : ""}` : "A combinar";
+
+    const text = `Olá Privê! Gostaria de finalizar meu pedido:\n\n${itemsList}\n\n*Total: R$ ${total.toFixed(2)}*\n\n*Dados do Cliente:*\nNome: ${name || "Cliente"}\nEmail: ${email || "Não informado"}\nTelefone: ${phone || "Não informado"}\nEndereço: ${addressStr}${msg ? `\nObservação: ${msg}` : ""}`;
+
+    window.open(`https://wa.me/${storePhone}?text=${encodeURIComponent(text)}`, "_blank");
   }
 
   return (
@@ -133,38 +146,44 @@ function CarrinhoPage() {
         </div>
 
         {items.length > 0 && (
-          <aside className="glass rounded-2xl p-5 h-fit lg:sticky lg:top-24 space-y-3">
+          <aside className="glass rounded-2xl p-5 h-fit lg:sticky lg:top-24 space-y-4">
             <h2 className="font-display text-2xl">Finalizar Pedido</h2>
-            <div className="flex justify-between font-display text-xl">
+            <div className="flex justify-between font-display text-xl border-b border-border/30 pb-3">
               <span>Total</span><span className="text-gradient-gold">R$ {total.toFixed(2)}</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Input placeholder="Seu nome *" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input placeholder="Email *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <Input placeholder="WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Input placeholder="Endereço" value={address} onChange={(e) => setAddress(e.target.value)} />
+              <Input placeholder="E-mail *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input placeholder="WhatsApp / Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input placeholder="Endereço de entrega" value={address} onChange={(e) => setAddress(e.target.value)} />
               <div className="grid grid-cols-3 gap-2">
                 <Input placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
                 <Input placeholder="UF" value={state} onChange={(e) => setState(e.target.value)} maxLength={2} />
                 <Input placeholder="CEP" value={zip} onChange={(e) => setZip(e.target.value)} />
               </div>
-              <Textarea placeholder="Observações do pedido" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
+              <Textarea placeholder="Observações do pedido (opcional)" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
             </div>
 
-            <div className="pt-2 border-t border-border/30">
-              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                Pagamento online instantâneo e seguro via InfinitePay (Cartão ou PIX).
-              </p>
-            </div>
+            <div className="pt-3 border-t border-border/30 space-y-2.5">
+              <Button
+                disabled={busy}
+                onClick={checkout}
+                className="w-full py-3 font-medium shadow-md transition bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-glow"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {busy ? "Redirecionando..." : "Cartão, PIX ou Checkout Transparente"}
+              </Button>
 
-            <Button
-              disabled={busy}
-              onClick={checkout}
-              className="w-full py-2.5 font-medium shadow-md transition bg-primary text-primary-foreground hover:opacity-90 shadow-glow"
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              {busy ? "Redirecionando..." : "Finalizar com Cartão ou PIX"}
-            </Button>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={handleWhatsAppCheckout}
+                className="w-full py-2.5 font-medium transition border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+              >
+                <MessageCircle className="w-4 h-4 mr-2 text-emerald-500" />
+                Finalizar no WhatsApp com a Loja
+              </Button>
+            </div>
           </aside>
         )}
       </div>

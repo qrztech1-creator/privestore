@@ -3,17 +3,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useShopCart } from "@/lib/shopCart";
+import { useFavorites } from "@/lib/favorites";
+import { useRecentlyViewed } from "@/lib/recentlyViewed";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import {
   Heart, ShoppingBag, Bell, Search, Plus, MessageCircle,
   Truck, ShieldCheck, Sparkles, RefreshCw, Instagram, Mail, ArrowRight, Star,
+  User, LogOut, X, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 import { ProductModal } from "@/components/ProductModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
 
@@ -39,15 +44,32 @@ export const Route = createFileRoute("/loja/")({
 });
 
 function LojaPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [lineFilter, setLineFilter] = useState<string>("all");
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [showOnlyFavs, setShowOnlyFavs] = useState(false);
   const [modalProduct, setModalProduct] = useState<any | null>(null);
+  
+  // Customer Auth Modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPass, setAuthPass] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
   const cartCount = useShopCart((s) => s.items.reduce((a, b) => a + b.qty, 0));
+  
+  const favorites = useFavorites((s) => s.favorites);
+  const initFavorites = useFavorites((s) => s.init);
+  const toggleFavorite = useFavorites((s) => s.toggle);
+
+  const recentlyViewedIds = useRecentlyViewed((s) => s.ids);
+  const addRecentlyViewed = useRecentlyViewed((s) => s.add);
+
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,12 +77,12 @@ function LojaPage() {
       const { data } = await supabase.rpc("get_shop_catalog");
       setProducts(Array.isArray(data) ? data : []);
       setLoading(false);
-      if (user) {
-        const { data: favs } = await supabase.from("shop_favorites").select("product_id").eq("user_id", user.id);
-        setFavorites(new Set((favs ?? []).map((f: any) => f.product_id)));
-      }
     })();
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    initFavorites(user?.id);
+  }, [user, initFavorites]);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -78,10 +100,11 @@ function LojaPage() {
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
+      if (showOnlyFavs && !favorites.has(p.id)) return false;
       if (lineFilter !== "all" && p.line_id !== lineFilter) return false;
       return true;
     });
-  }, [products, lineFilter]);
+  }, [products, lineFilter, showOnlyFavs, favorites]);
 
   const searchResults = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -96,15 +119,57 @@ function LojaPage() {
 
   const featured = useMemo(() => products.slice(0, 4), [products]);
 
-  async function toggleFav(pid: string) {
-    if (!user) return toast.error("Entre com sua conta para favoritar");
-    if (favorites.has(pid)) {
-      await supabase.from("shop_favorites").delete().eq("user_id", user.id).eq("product_id", pid);
-      const s = new Set(favorites); s.delete(pid); setFavorites(s);
+  const recentlyViewedProducts = useMemo(() => {
+    if (!recentlyViewedIds || recentlyViewedIds.length === 0) return [];
+    const map = new Map(products.map((p) => [p.id, p]));
+    return recentlyViewedIds.map((id) => map.get(id)).filter(Boolean);
+  }, [products, recentlyViewedIds]);
+
+  async function handleToggleFav(pid: string, e?: React.MouseEvent) {
+    if (e) e.stopPropagation();
+    const wasFav = favorites.has(pid);
+    await toggleFavorite(pid, user?.id);
+    if (!wasFav) {
+      toast.success("Adicionado aos favoritos ♡");
     } else {
-      await supabase.from("shop_favorites").insert({ user_id: user.id, product_id: pid });
-      setFavorites(new Set([...favorites, pid]));
-      toast.success("Favoritado ♡");
+      toast.info("Removido dos favoritos");
+    }
+  }
+
+  function handleOpenModal(product: any) {
+    setModalProduct(product);
+    addRecentlyViewed(product.id);
+  }
+
+  async function handleCustomerAuth(e: React.FormEvent) {
+    e.preventDefault();
+    if (!authEmail || !authPass) return toast.error("Preencha e-mail e senha");
+    setAuthLoading(true);
+
+    try {
+      if (authMode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPass,
+        });
+        if (error) throw error;
+        toast.success("Bem-vinda de volta! ✨");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPass,
+          options: { data: { full_name: authName || "Cliente" } },
+        });
+        if (error) throw error;
+        toast.success("Conta criada com sucesso! Sinta-se em casa ✨");
+      }
+      setShowAuthModal(false);
+      setAuthPass("");
+    } catch (err: any) {
+      console.error("Erro na autenticação:", err);
+      toast.error(err.message || "Falha na autenticação.");
+    } finally {
+      setAuthLoading(false);
     }
   }
 
@@ -170,14 +235,40 @@ function LojaPage() {
               </div>
             )}
           </div>
-          <Link to="/loja/carrinho">
-            <Button variant="outline" size="sm" className="relative border-border/60">
-              <ShoppingBag className="w-4 h-4" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center">{cartCount}</span>
-              )}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowOnlyFavs(!showOnlyFavs)}
+              className={showOnlyFavs ? "border-primary text-primary bg-primary/10" : "border-border/60"}
+              title="Meus Favoritos"
+            >
+              <Heart className={`w-4 h-4 ${favorites.size > 0 ? "fill-primary text-primary" : ""}`} />
+              {favorites.size > 0 && <span className="ml-1 text-xs font-bold">{favorites.size}</span>}
             </Button>
-          </Link>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAuthModal(true)}
+              className="border-border/60"
+              title={user ? "Sua Conta" : "Entrar / Cadastrar"}
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1 text-xs truncate max-w-[100px]">
+                {user ? (user.email?.split("@")[0] || "Minha Conta") : "Entrar"}
+              </span>
+            </Button>
+
+            <Link to="/loja/carrinho">
+              <Button variant="outline" size="sm" className="relative border-border/60">
+                <ShoppingBag className="w-4 h-4" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center">{cartCount}</span>
+                )}
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -320,7 +411,7 @@ function LojaPage() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {featured.map((p, i) => (
-                <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} onOpen={() => setModalProduct(p)} user={user} />
+                <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={(e: any) => handleToggleFav(p.id, e)} onOpen={() => handleOpenModal(p)} user={user} />
               ))}
             </div>
           </div>
@@ -358,7 +449,7 @@ function LojaPage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((p, i) => (
-              <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={() => toggleFav(p.id)} onOpen={() => setModalProduct(p)} user={user} />
+              <ShopCard key={p.id} product={p} delay={i * 0.03} isFavorite={favorites.has(p.id)} onToggleFav={(e: any) => handleToggleFav(p.id, e)} onOpen={() => handleOpenModal(p)} user={user} />
             ))}
           </div>
         )}
@@ -394,7 +485,7 @@ function LojaPage() {
 
       {/* Newsletter */}
       <section className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="text-[11px] uppercase tracking-[0.3em] text-primary/70 mb-3">Lista de espera</div>
+            <div className="text-[11px] uppercase tracking-[0.3em] text-primary/70 mb-3">Lista de espera</div>
         <h3 className="font-display text-3xl sm:text-4xl mb-3">Seja a primeira a saber</h3>
         <p className="text-muted-foreground mb-6">Lançamentos, drops limitados e convites secretos.</p>
         <form onSubmit={(e) => { e.preventDefault(); toast.success("Bem-vinda 💌"); }} className="flex gap-2 max-w-md mx-auto">
@@ -403,9 +494,35 @@ function LojaPage() {
         </form>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 bg-secondary/30">
-        <div className="max-w-7xl mx-auto px-4 py-12 grid sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+      {/* VISTOS RECENTAMENTE */}
+      {recentlyViewedProducts.length > 0 && (
+        <section className="py-12 border-t border-border/30 bg-secondary/15">
+          <div className="max-w-7xl mx-auto px-4">
+            <h2 className="font-display text-2xl mb-6">Vistos Recentemente</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {recentlyViewedProducts.map((p: any) => (
+                <div
+                  key={p.id}
+                  onClick={() => handleOpenModal(p)}
+                  className="cursor-pointer bg-card rounded-xl p-2.5 border border-border/40 hover:border-primary/50 transition group"
+                >
+                  <div className="aspect-[3/4] rounded-lg bg-secondary overflow-hidden mb-2 relative">
+                    {p.image_url && (
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                    )}
+                  </div>
+                  <h3 className="font-medium text-xs truncate">{p.name}</h3>
+                  <p className="text-primary text-xs font-display font-semibold mt-0.5">R$ {Number(p.price).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FOOTER */}
+      <footer className="border-t border-border/40 bg-card text-xs">
+        <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
             <Logo className="h-8 mb-3" />
             <p className="text-xs text-muted-foreground">Lingerie de autor. Feita devagar, para durar.</p>
@@ -464,7 +581,7 @@ function LojaPage() {
         open={!!modalProduct}
         onClose={() => setModalProduct(null)}
         isFavorite={modalProduct ? favorites.has(modalProduct.id) : false}
-        onToggleFav={() => modalProduct && toggleFav(modalProduct.id)}
+        onToggleFav={() => modalProduct && handleToggleFav(modalProduct.id)}
         user={user}
       />
     </div>
