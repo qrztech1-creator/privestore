@@ -71,6 +71,41 @@ export const createShopOrderServerFn = createServerFn({ method: "POST" })
       throw new Error(itemErr.message);
     }
 
+    // Task 3, 4 & 5: Log checkout initiation for team tracking & recovery
+    try {
+      const { generateTeamCheckoutNotificationHTML, formatCheckoutPayloadForWhatsAppAPI } = await import("./abandonedCheckoutRecovery");
+      
+      const fullOrderObj = {
+        ...order,
+        items: orderItems,
+      };
+
+      const notificationHtml = generateTeamCheckoutNotificationHTML(fullOrderObj);
+      const whatsappPayload = formatCheckoutPayloadForWhatsAppAPI(fullOrderObj);
+
+      console.log(`[Checkout Tracking] 🚨 CHECKOUT INICIADO! Pedido #${order.id.slice(0, 8)} por ${data.guest_name} (${data.guest_email}). Total: R$ ${data.total}`);
+      console.log(`[Checkout Tracking] Payload estruturado para Automação WhatsApp:`, JSON.stringify(whatsappPayload, null, 2));
+
+      // Attempt sending email alert if environment email webhook / RESEND_API_KEY is configured
+      if (process.env.RESEND_API_KEY) {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: "Privê Boutique <checkout@priveloja.com.br>",
+            to: ["contatopriveloja@gmail.com", "thiago@qrztech.com"],
+            subject: `🚨 Novo Checkout Iniciado - ${data.guest_name} (R$ ${data.total.toFixed(2)})`,
+            html: notificationHtml,
+          }),
+        }).catch((e) => console.error("Erro ao enviar email via Resend:", e));
+      }
+    } catch (notifyErr) {
+      console.error("Erro ao processar notificação de checkout:", notifyErr);
+    }
+
     return order;
   });
 

@@ -30,7 +30,7 @@ function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <Link to="/" className="flex justify-center mb-8"><Logo className="h-14" /></Link>
+        <Link to="/" className="flex justify-center mb-8"><Logo className="h-22" /></Link>
         <div className="glass rounded-3xl p-8 shadow-luxury">
           <div className="flex justify-center mb-3"><Lock className="w-6 h-6 text-primary" /></div>
           <h1 className="font-display text-3xl text-center mb-1">Acesso Privê</h1>

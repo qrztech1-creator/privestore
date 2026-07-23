@@ -170,7 +170,18 @@ function AdminOrders() {
                       </p>
                     )}
                     <ul className="text-sm space-y-1">{o.items?.map((i: any) => <li key={i.id}>· {i.qty}× {i.product_name} — R$ {Number(i.unit_price).toFixed(2)}</li>)}</ul>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {o.guest_phone && (
+                        <a
+                          href={`https://wa.me/${o.guest_phone.replace(/\D/g, "").startsWith("55") ? o.guest_phone.replace(/\D/g, "") : "55" + o.guest_phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${o.guest_name ? o.guest_name.split(" ")[0] : "Cliente"}! Vi que você iniciou sua compra na Privê (Pedido #${o.id.slice(0, 8).toUpperCase()}). Posso te ajudar a finalizar? ✨\n\nLink do seu carrinho: https://priveloja.com.br/loja/carrinho`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Button size="sm" className="bg-[#25D366] text-white hover:bg-[#20ba5a]">
+                            💬 Recuperar no WhatsApp
+                          </Button>
+                        </a>
+                      )}
                       {o.status !== "paid" && <Button size="sm" variant="outline" onClick={() => setOrderStatus(o.id, "paid")}>Marcar pago</Button>}
                       {o.status !== "shipped" && <Button size="sm" variant="outline" onClick={() => setOrderStatus(o.id, "shipped")}>Marcar enviado</Button>}
                       {o.status !== "delivered" && <Button size="sm" variant="outline" onClick={() => setOrderStatus(o.id, "delivered")}>Marcar entregue</Button>}

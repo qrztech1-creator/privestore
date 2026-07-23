@@ -14,7 +14,7 @@ function Index() {
     <div className="min-h-screen overflow-hidden">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-20 px-6 py-5 flex items-center justify-between">
-        <Logo className="h-12" />
+        <Logo className="h-20" />
         <nav className="flex items-center gap-3">
           <Button asChild variant="ghost"><Link to="/loja">Loja</Link></Button>
           {user ? (
@@ -85,7 +85,7 @@ function Index() {
       </section>
 
       <footer className="border-t border-border/30 py-10 px-6 text-center text-xs text-muted-foreground">
-        <Logo className="h-8 mx-auto mb-3 opacity-70" />
+        <Logo className="h-14 mx-auto mb-3 opacity-70" />
         © {new Date().getFullYear()} Privê — boutique experience.
       </footer>
     </div>

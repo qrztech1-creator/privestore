@@ -145,7 +145,7 @@ export function PainelCliente() {
               </Button>
             </Link>
           )}
-          <Logo className="h-10 md:h-12 ml-auto" />
+          <Logo className="h-16 md:h-20 ml-auto" />
         </div>
       </header>
 

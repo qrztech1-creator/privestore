@@ -79,7 +79,7 @@ export function PanelShell({ children, mode = "admin", brideName, brideToken, na
     <div className="min-h-screen flex bg-background">
       <aside className="w-64 bg-sidebar border-r border-sidebar-border hidden md:flex flex-col">
         <div className="p-5 flex items-center gap-3">
-          <Logo className="h-9 w-9 rounded-full" />
+          <Logo className="h-14 w-14 rounded-full" />
           <div className="font-display text-lg leading-tight text-sidebar-foreground">{headerTitle}</div>
         </div>
         <nav className="flex-1 p-3 space-y-1">

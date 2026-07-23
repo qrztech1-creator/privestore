@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 import { ProductModal } from "@/components/ProductModal";
 import { CustomerAuthModal } from "@/components/CustomerAuthModal";
+import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
@@ -268,7 +269,7 @@ function LojaPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/85 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Link to="/" className="shrink-0"><Logo className="h-12 md:h-14" /></Link>
+          <Link to="/" className="shrink-0"><Logo className="h-18 md:h-24" /></Link>
           <nav className="hidden md:flex items-center gap-6 text-[13px] tracking-wider uppercase text-foreground/70">
             <a href="#colecoes" className="hover:text-primary transition">Coleções</a>
             <a href="#linhas" className="hover:text-primary transition">Linhas</a>
@@ -633,7 +634,7 @@ function LojaPage() {
       <footer className="border-t border-border/40 bg-card text-xs">
         <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
-            <Logo className="h-12 sm:h-14 mb-4" />
+            <Logo className="h-18 sm:h-24 mb-4" />
             <p className="text-xs text-muted-foreground leading-relaxed">
               Lingerie autoral em renda e seda. Peças exclusivas desenhadas para valorizar sua essência com elegância.
             </p>
@@ -716,6 +717,8 @@ function LojaPage() {
         open={showAuthModal}
         onOpenChange={setShowAuthModal}
       />
+
+      <ExitIntentPopup />
     </div>
   );
 }

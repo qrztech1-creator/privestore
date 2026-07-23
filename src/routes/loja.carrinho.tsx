@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Minus, Plus, Trash, CreditCard, Sparkles, Truck, Search, Loader2, Ticket } from "lucide-react";
 import { createInfinitepayCheckout, createShopOrderServerFn } from "@/lib/infinitepay.functions";
 import { CustomerAuthModal } from "@/components/CustomerAuthModal";
+import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 
 export const Route = createFileRoute("/loja/carrinho")({
   component: CarrinhoPage,
@@ -213,7 +214,7 @@ function CarrinhoPage() {
       <header className="sticky top-0 z-30 glass border-b border-border/30 backdrop-blur">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link to="/loja"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" />Continuar comprando</Button></Link>
-          <Logo className="h-10 md:h-12 ml-auto" />
+          <Logo className="h-16 md:h-20 ml-auto" />
         </div>
       </header>
 
@@ -390,6 +391,7 @@ function CarrinhoPage() {
         )}
       </div>
       <CustomerAuthModal open={showAuth} onOpenChange={setShowAuth} />
+      <ExitIntentPopup onApplyCoupon={(code) => setCouponCode(code)} />
     </div>
   );
 }
