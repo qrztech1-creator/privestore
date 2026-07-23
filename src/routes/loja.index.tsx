@@ -428,7 +428,7 @@ function LojaPage() {
         <div className="absolute inset-0 -z-10 opacity-40" style={{
           backgroundImage: "radial-gradient(circle at 15% 20%, oklch(0.78 0.075 35 / 0.35), transparent 40%), radial-gradient(circle at 85% 80%, oklch(0.36 0.09 22 / 0.25), transparent 45%)",
         }} />
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 grid lg:grid-cols-2 gap-10 items-center">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-8 sm:pt-6 sm:pb-12 grid lg:grid-cols-2 gap-8 items-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-[11px] uppercase tracking-[0.25em] text-primary mb-6">
               <Sparkles className="w-3 h-3" />Nova coleção · Verão 2026
