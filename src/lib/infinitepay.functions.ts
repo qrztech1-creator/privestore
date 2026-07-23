@@ -179,11 +179,27 @@ export const createInfinitepayCheckout = createServerFn({ method: "POST" })
     }
 
     if (order.address_line || order.address_zip) {
+      let street = order.address_line || "";
+      let number = "S/N";
+      let complement = "";
+      let neighborhood = order.address_city || "";
+
+      if (order.address_line && order.address_line.includes("|")) {
+        const [st, num, comp, neigh] = order.address_line.split("|").map((s: string) => s.trim());
+        street = st || street;
+        number = num || "S/N";
+        complement = comp || "";
+        neighborhood = neigh || neighborhood;
+      }
+
       payload.address = {
         cep: order.address_zip ? order.address_zip.replace(/\D/g, "") : "",
-        street: order.address_line || "",
-        neighborhood: order.address_city || "",
-        number: "S/N",
+        street,
+        number,
+        complement,
+        neighborhood,
+        city: order.address_city || "",
+        state: order.address_state || "",
       };
     }
 

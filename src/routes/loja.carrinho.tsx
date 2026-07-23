@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { useShopCart } from "@/lib/shopCart";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { ArrowLeft, Minus, Plus, Trash, CreditCard, Sparkles, Truck, Search, Loader2, Ticket } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash, CreditCard, Sparkles, Truck, Search, Loader2, Ticket, User } from "lucide-react";
 import { createInfinitepayCheckout, createShopOrderServerFn } from "@/lib/infinitepay.functions";
 import { CustomerAuthModal } from "@/components/CustomerAuthModal";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
@@ -33,11 +33,18 @@ function CarrinhoPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  
+  // Endereço detalhado
+  const [zip, setZip] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [zip, setZip] = useState("");
   const [msg, setMsg] = useState("");
+
+  const numberInputRef = useRef<HTMLInputElement>(null);
   
   const [busy, setBusy] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -47,10 +54,33 @@ function CarrinhoPage() {
   const [isFirstPurchase, setIsFirstPurchase] = useState<boolean>(false);
   const [checkingOrders, setCheckingOrders] = useState<boolean>(false);
 
+  // Carregar dados salvos no perfil / metadata do usuário logado
   useEffect(() => {
-    if (user?.email) {
-      setEmail(user.email);
-    }
+    if (!user) return;
+    setEmail(user.email || "");
+
+    const meta = user.user_metadata || {};
+    if (meta.full_name && !name) setName(meta.full_name);
+    if (meta.phone && !phone) setPhone(meta.phone);
+    if (meta.zip && !zip) setZip(meta.zip);
+    if (meta.street && !street) setStreet(meta.street);
+    if (meta.number && !number) setNumber(meta.number);
+    if (meta.complement && !complement) setComplement(meta.complement);
+    if (meta.neighborhood && !neighborhood) setNeighborhood(meta.neighborhood);
+    if (meta.city && !city) setCity(meta.city);
+    if (meta.state && !state) setState(meta.state);
+
+    (async () => {
+      try {
+        const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+        if (prof) {
+          if (prof.full_name && !name) setName(prof.full_name);
+          if (prof.phone && !phone) setPhone(prof.phone);
+        }
+      } catch (e) {
+        console.warn("Erro ao buscar perfil:", e);
+      }
+    })();
   }, [user]);
 
   // Verificar se o usuário logado possui pedidos anteriores
@@ -80,10 +110,11 @@ function CarrinhoPage() {
     })();
   }, [user]);
 
-  // Busca automática de endereço por CEP (ViaCEP sem chave de API)
+  // Busca automática de endereço por CEP (ViaCEP)
   async function handleCepLookup(inputZip: string) {
     const cleanZip = inputZip.replace(/\D/g, "");
-    setZip(inputZip);
+    const formattedZip = cleanZip.length > 5 ? `${cleanZip.slice(0, 5)}-${cleanZip.slice(5, 8)}` : cleanZip;
+    setZip(formattedZip);
     if (cleanZip.length !== 8) return;
 
     setLoadingCep(true);
@@ -91,12 +122,14 @@ function CarrinhoPage() {
       const res = await fetch(`https://viacep.com.br/ws/${cleanZip}/json/`);
       const data = await res.json();
       if (!data.erro) {
-        setAddress(data.logradouro ? `${data.logradouro}${data.bairro ? `, ${data.bairro}` : ""}` : address);
-        setCity(data.localidade || city);
-        setState(data.uf || state);
-        toast.success("Endereço preenchido pelo CEP! 🚚");
+        setStreet(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+        setCity(data.localidade || "");
+        setState(data.uf || "");
+        toast.success("Endereço localizado! Digite o número da sua casa 🏠");
+        setTimeout(() => numberInputRef.current?.focus(), 150);
       } else {
-        toast.error("CEP não encontrado.");
+        toast.error("CEP não encontrado. Preencha manualmente.");
       }
     } catch (e) {
       console.error("Erro ao buscar CEP:", e);
@@ -151,8 +184,7 @@ function CarrinhoPage() {
   
   const firstPurchaseDiscount = (user && isFirstPurchase && !appliedCoupon) ? Math.round(subtotal * 0.10 * 100) / 100 : 0;
   
-  const activeDiscount = Math.max(couponDiscount, firstPurchaseDiscount); // Use o maior ou aquele que está ativo
-  
+  const activeDiscount = Math.max(couponDiscount, firstPurchaseDiscount);
   const total = Math.max(0, subtotal - activeDiscount + shippingCost);
 
   // 5% de desconto no PIX permanece sempre após tudo se a forma escolhida for PIX
@@ -163,16 +195,42 @@ function CarrinhoPage() {
   async function checkout() {
     if (items.length === 0) return;
     if (!name || !email) return toast.error("Preencha seu nome e e-mail para prosseguir.");
+    if (!street || !city || !state || !zip) return toast.error("Preencha o CEP e o endereço de entrega.");
     setBusy(true);
 
     try {
+      // Salvar dados atualizados no perfil do usuário para compras futuras
+      if (user) {
+        supabase.auth.updateUser({
+          data: {
+            full_name: name,
+            phone,
+            zip,
+            street,
+            number,
+            complement,
+            neighborhood,
+            city,
+            state,
+          },
+        }).catch((e) => console.warn("Erro ao salvar metadata:", e));
+
+        supabase.from("profiles").update({
+          full_name: name,
+          phone,
+        }).eq("id", user.id).catch((e) => console.warn("Erro ao salvar profile:", e));
+      }
+
+      // Linha de endereço estruturada enviada para o servidor (rua | numero | complemento | bairro)
+      const structuredAddressLine = `${street} | ${number || "S/N"} | ${complement || ""} | ${neighborhood || ""}`;
+
       const order = await createShopOrderServerFn({
         data: {
           customer_id: user?.id || null,
           guest_name: name,
           guest_email: email,
           guest_phone: phone || null,
-          address_line: address || null,
+          address_line: structuredAddressLine,
           address_city: city || null,
           address_state: state || null,
           address_zip: zip || null,
@@ -385,27 +443,47 @@ function CarrinhoPage() {
               </div>
             </div>
 
-            <div className="space-y-2.5">
-              <Input placeholder="Seu nome *" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input placeholder="E-mail *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <Input placeholder="WhatsApp / Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary border-b border-border/20 pb-1">
+                <User className="w-3.5 h-3.5" /> 1. Dados Pessoais
+              </div>
+              <Input placeholder="Seu nome completo *" value={name} onChange={(e) => setName(e.target.value)} className="h-10 text-xs rounded-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Input placeholder="E-mail *" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 text-xs rounded-xl" />
+                <Input placeholder="WhatsApp / Telefone *" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-10 text-xs rounded-xl" />
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary border-b border-border/20 pb-1 pt-2">
+                <Truck className="w-3.5 h-3.5" /> 2. Endereço de Entrega
+              </div>
               
               <div className="relative">
                 <Input
-                  placeholder="CEP de entrega (cálculo automático) *"
+                  placeholder="CEP (00000-000) *"
                   value={zip}
                   onChange={(e) => handleCepLookup(e.target.value)}
                   maxLength={9}
+                  className="h-10 text-xs rounded-xl pr-9 font-medium"
                 />
-                {loadingCep && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />}
+                {loadingCep && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-primary" />}
               </div>
 
-              <Input placeholder="Endereço de entrega" value={address} onChange={(e) => setAddress(e.target.value)} />
-              <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-                <Input placeholder="UF" value={state} onChange={(e) => setState(e.target.value)} maxLength={2} />
+              <div className="grid grid-cols-[1fr_95px] gap-2">
+                <Input placeholder="Rua / Logradouro *" value={street} onChange={(e) => setStreet(e.target.value)} className="h-10 text-xs rounded-xl" />
+                <Input ref={numberInputRef} placeholder="Nº *" value={number} onChange={(e) => setNumber(e.target.value)} className="h-10 text-xs rounded-xl font-bold" />
               </div>
-              <Textarea placeholder="Observações do pedido (opcional)" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} />
+
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder="Complemento (Apto, Bloco)" value={complement} onChange={(e) => setComplement(e.target.value)} className="h-10 text-xs rounded-xl" />
+                <Input placeholder="Bairro *" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="h-10 text-xs rounded-xl" />
+              </div>
+
+              <div className="grid grid-cols-[1fr_75px] gap-2">
+                <Input placeholder="Cidade *" value={city} onChange={(e) => setCity(e.target.value)} className="h-10 text-xs rounded-xl" />
+                <Input placeholder="UF *" value={state} onChange={(e) => setState(e.target.value)} maxLength={2} className="h-10 text-xs rounded-xl uppercase font-bold text-center" />
+              </div>
+
+              <Textarea placeholder="Observações do pedido (opcional)" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} className="text-xs rounded-xl" />
             </div>
 
             <div className="pt-3 border-t border-border/30 space-y-2">
