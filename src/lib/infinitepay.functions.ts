@@ -131,6 +131,8 @@ export const createInfinitepayCheckout = createServerFn({ method: "POST" })
       .single();
     if (error || !order) throw new Error("Pedido não encontrado");
 
+    const targetTotalCents = Math.round(Number(order.total) * 100);
+
     // Formatar itens para a API em centavos (ex: R$ 10.00 = 1000 centavos)
     const itemsFormatted = (order.items || []).map((i: any) => ({
       description: i.product_name || "Produto Privê",
@@ -138,11 +140,25 @@ export const createInfinitepayCheckout = createServerFn({ method: "POST" })
       price: Math.round(Number(i.unit_price) * 100),
     }));
 
-    const finalItems = itemsFormatted.length > 0 ? itemsFormatted : [{
-      description: `Pedido Privê ${order.id.slice(0, 8).toUpperCase()}`,
-      quantity: 1,
-      price: Math.round(Number(order.total) * 100),
-    }];
+    const itemsSum = itemsFormatted.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    let finalItems: Array<{ description: string; quantity: number; price: number }>;
+
+    if (itemsSum === targetTotalCents && itemsFormatted.length > 0) {
+      finalItems = itemsFormatted;
+    } else {
+      // Quando o total do pedido inclui desconto (1ª compra / cupom) ou frete,
+      // enviamos o valor final exato em centavos calculado no carrinho (order.total).
+      const itemsListDesc = (order.items || [])
+        .map((i: any) => `${i.qty}x ${i.product_name}`)
+        .join(", ");
+
+      finalItems = [{
+        description: itemsListDesc ? `Pedido Privê (${itemsListDesc})` : `Pedido Privê ${order.id.slice(0, 8).toUpperCase()}`,
+        quantity: 1,
+        price: targetTotalCents,
+      }];
+    }
 
     const payload: Record<string, any> = {
       handle,

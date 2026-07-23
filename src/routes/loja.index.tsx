@@ -163,10 +163,14 @@ function LojaPage() {
 
   const featured = useMemo(() => products.slice(0, 4), [products]);
 
-  // Lista dinâmica de Bodys com prioridade para a cor Rubi nos 3 primeiros itens
+  // Destaque do topo da Home (Hero Banner Slider):
+  // 1º slide: Baby Doll Amara na cor Rubi
+  // 2º e 3º slides: Outros 2 bodys na tonalidade Rubi/Vermelho/Vinho (com a imagem dessa variação de cor)
+  // 4º em diante: Aleatório (modelos e variações de cores misturados)
   const bodyProducts = useMemo(() => {
     if (!products || products.length === 0) return [];
     
+    // Pool de produtos para o destaque rotativo (bodys / lingeries)
     const pool = products.filter((p) => {
       const name = (p.name || "").toLowerCase();
       const cat = (p.category_name || "").toLowerCase();
@@ -176,46 +180,104 @@ function LojaPage() {
     
     const bodys = pool.length > 0 ? pool : products;
 
-    // Buscar o Amara para garantir como primeiro com a imagem Rubi
+    // Helper para buscar a melhor imagem de um produto baseado em palavras-chave de cor ou aleatória
+    const findProductImage = (p: any, colorKeywords?: string[]) => {
+      const imgs = p.images || [];
+      const vars = p.variants || [];
+      
+      if (colorKeywords && colorKeywords.length > 0) {
+        // 1. Procurar nas imagens do produto
+        for (const kw of colorKeywords) {
+          const foundImg = imgs.find((i: any) => (i.color_name || "").toLowerCase().includes(kw));
+          if (foundImg?.url) return foundImg.url;
+        }
+        // 2. Procurar nas variantes do produto
+        for (const kw of colorKeywords) {
+          const foundVar = vars.find((v: any) => (v.color_name || "").toLowerCase().includes(kw));
+          if (foundVar?.image_url) return foundVar.image_url;
+        }
+      }
+      
+      // Se não houver filtro de cor ou não encontrar a cor específica, pegar uma imagem de variante aleatória ou p.image_url
+      const allImgs: string[] = [];
+      if (p.image_url) allImgs.push(p.image_url);
+      imgs.forEach((i: any) => i.url && allImgs.push(i.url));
+      vars.forEach((v: any) => v.image_url && allImgs.push(v.image_url));
+
+      const uniqueImgs = Array.from(new Set(allImgs));
+      if (uniqueImgs.length > 0) {
+        return uniqueImgs[Math.floor(Math.random() * uniqueImgs.length)];
+      }
+      return p.image_url;
+    };
+
+    // 1. Buscar o Amara para garantir como 1º slide na cor Rubi
     const amaraRaw = bodys.find(p => (p.name || "").toLowerCase().includes("amara"));
-    let amara = null;
+    let amaraSlide = null;
     if (amaraRaw) {
-      const rubiImg = amaraRaw.images?.find((i: any) => (i.color_name || "").toLowerCase().includes("rubi"))?.url;
-      amara = {
+      const rubiImg = findProductImage(amaraRaw, ["rubi", "vermelho", "vinho"]);
+      amaraSlide = {
         ...amaraRaw,
         image_url: rubiImg || "https://images.tcdn.com.br/img/img_prod/794909/baby_doll_amara_4328_variacao_25668_4_b4852564e8bc544a4d3e8c4b5c3caa06.jpg"
       };
     }
 
-    // Filtrar bodys com variação/nome Rubi ou Vermelho (excluindo amara)
-    const rubis = bodys.filter((p) => {
+    // 2. Buscar outros bodys que possuem opção de cor Rubi/Vermelho/Vinho (excluindo Amara)
+    const rubiCandidates = bodys.filter((p) => {
       if (amaraRaw && p.id === amaraRaw.id) return false;
       const name = (p.name || "").toLowerCase();
       const vars = p.variants || [];
       const imgs = p.images || [];
       const hasRubiVar = vars.some((v: any) => 
-        (v.color_name || "").toLowerCase().includes("rubi") || 
-        (v.color_name || "").toLowerCase().includes("vermelho") ||
-        (v.color_name || "").toLowerCase().includes("vinho")
+        ["rubi", "vermelho", "vinho"].some(kw => (v.color_name || "").toLowerCase().includes(kw))
       );
       const hasRubiImg = imgs.some((i: any) => 
-        (i.color_name || "").toLowerCase().includes("rubi") || 
-        (i.color_name || "").toLowerCase().includes("vermelho") ||
-        (i.color_name || "").toLowerCase().includes("vinho")
+        ["rubi", "vermelho", "vinho"].some(kw => (i.color_name || "").toLowerCase().includes(kw))
       );
       return name.includes("rubi") || name.includes("vermelho") || name.includes("vinho") || hasRubiVar || hasRubiImg;
     });
 
-    const others = bodys.filter((p) => p.id !== amaraRaw?.id && !rubis.some(r => r.id === p.id));
+    // Mapear cada candidato rubi garantindo que o slide use a imagem da versão RUBI/VERMELHO
+    const rubiSlides = rubiCandidates.map((p) => {
+      const rubiImg = findProductImage(p, ["rubi", "vermelho", "vinho"]);
+      return {
+        ...p,
+        image_url: rubiImg || p.image_url
+      };
+    });
 
-    // Embaralhar (aleatório) o restante
-    const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
-    const shuffledRubis = [...rubis].sort(() => Math.random() - 0.5);
+    // Embaralhar as opções rubi restantes
+    const shuffledRubiSlides = [...rubiSlides].sort(() => Math.random() - 0.5);
+    const initialRubiItems = shuffledRubiSlides.slice(0, amaraSlide ? 2 : 3);
 
-    // Ordem: 1º Amara Rubi, próximos 2 rubis (para totalizar 3 rubis), e depois tudo misturado aleatoriamente
-    const firstItems = amara ? [amara] : [];
-    const ordered = [...firstItems, ...shuffledRubis.slice(0, 3 - firstItems.length), ...shuffledOthers, ...shuffledRubis.slice(3 - firstItems.length)];
-    return ordered.length > 0 ? ordered : bodys;
+    // IDs já utilizados nos 3 primeiros slides
+    const usedIds = new Set<string>();
+    if (amaraRaw) usedIds.add(amaraRaw.id);
+    initialRubiItems.forEach(item => usedIds.add(item.id));
+
+    // 3. Demais bodys/produtos para o restante da rotação (ALEATÓRIO de modelo e cor)
+    const remainingProducts = bodys.filter(p => !usedIds.has(p.id));
+
+    // Criar slides com cores/variantes aleatórias para o restante
+    const randomSlides = remainingProducts.map((p) => {
+      const randomImg = findProductImage(p);
+      return {
+        ...p,
+        image_url: randomImg
+      };
+    });
+
+    // Embaralhar aleatoriamente todo o restante
+    const shuffledRandom = [...randomSlides].sort(() => Math.random() - 0.5);
+
+    // Lista final: 1º Amara Rubi, 2º e 3º Bodys Rubi/Vermelho, 4º em diante Aleatório
+    const finalSlides = [
+      ...(amaraSlide ? [amaraSlide] : []),
+      ...initialRubiItems,
+      ...shuffledRandom
+    ];
+
+    return finalSlides.length > 0 ? finalSlides : bodys;
   }, [products]);
 
   const [highlightIdx, setHighlightIdx] = useState(0);

@@ -155,6 +155,11 @@ function CarrinhoPage() {
   
   const total = Math.max(0, subtotal - activeDiscount + shippingCost);
 
+  // 5% de desconto no PIX permanece sempre após tudo se a forma escolhida for PIX
+  const totalProductsAfterDiscount = Math.max(0, subtotal - activeDiscount);
+  const pixDiscount = Math.round(totalProductsAfterDiscount * 0.05 * 100) / 100;
+  const pixTotal = Math.max(0, total - pixDiscount);
+
   async function checkout() {
     if (items.length === 0) return;
     if (!name || !email) return toast.error("Preencha seu nome e e-mail para prosseguir.");
@@ -224,36 +229,48 @@ function CarrinhoPage() {
 
           {/* Banner de incentivo ao desconto de 1ª Compra se não estiver logada */}
           {!user && (
-            <div className="glass rounded-2xl p-4 border border-primary/30 bg-primary/5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Sparkles className="w-4 h-4 text-primary" />
+            <div className="glass rounded-2xl p-4 border border-primary/30 bg-primary/5 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">10% de desconto na sua primeira compra! ✨</p>
+                    <p className="text-[11px] text-muted-foreground">Cadastre-se ou entre na sua conta para ativar o desconto.</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-foreground">Ganhe 10% OFF na sua 1ª Compra!</p>
-                  <p className="text-[11px] text-muted-foreground">Cadastre-se ou entre na sua conta para ativar o desconto.</p>
-                </div>
+                <Button size="sm" variant="outline" className="text-xs shrink-0 border-primary/40 text-primary" onClick={() => setShowAuth(true)}>
+                  Entrar / Cadastrar
+                </Button>
               </div>
-              <Button size="sm" variant="outline" className="text-xs shrink-0 border-primary/40 text-primary" onClick={() => setShowAuth(true)}>
-                Entrar / Cadastrar
-              </Button>
+              <div className="pt-2 border-t border-border/20 text-[10px] text-muted-foreground space-y-0.5">
+                <p>⚠️ <strong>Atenção:</strong> O desconto de 1ª compra não acumula com cupons ou outras promoções (é um ou outro).</p>
+                <p>⚡ <strong>Desconto PIX:</strong> O desconto de 5% no PIX permanece sempre ativo no final se o pagamento for no PIX.</p>
+              </div>
             </div>
           )}
 
           {/* Banner de confirmação do desconto de 1ª Compra se estiver logada e for elegível */}
           {user && isFirstPurchase && (
-            <div className="glass rounded-2xl p-4 border border-emerald-500/40 bg-emerald-500/10 flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-emerald-500 shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">10% OFF na 1ª Compra aplicado! ✨</p>
-                <p className="text-[11px] text-muted-foreground">Desconto exclusivo concedido por ser seu primeiro pedido.</p>
+            <div className="glass rounded-2xl p-4 border border-emerald-500/40 bg-emerald-500/10 space-y-2">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-emerald-500 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">10% OFF na 1ª Compra aplicado! ✨</p>
+                  <p className="text-[11px] text-muted-foreground">Desconto exclusivo concedido por ser seu primeiro pedido.</p>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-emerald-500/20 text-[10px] text-muted-foreground space-y-0.5">
+                <p>ℹ️ Não acumulável com cupons promocionais (aplica-se o desconto ativado). ⚡ +5% OFF garantido no PIX!</p>
               </div>
             </div>
           )}
 
           {user && !isFirstPurchase && !checkingOrders && (
-            <div className="glass rounded-2xl p-3 border border-border/40 text-xs text-muted-foreground">
-              Desconto de 1ª compra já utilizado em pedido anterior.
+            <div className="glass rounded-2xl p-3 border border-border/40 text-xs text-muted-foreground space-y-1">
+              <p>Desconto de 1ª compra já utilizado em pedido anterior.</p>
+              <p className="text-[10px]">⚡ O desconto de 5% no PIX permanece sempre ativo se optar por pagamento via PIX!</p>
             </div>
           )}
 
@@ -284,22 +301,27 @@ function CarrinhoPage() {
               </div>
               
               {/* Cupom Input */}
-              <div className="glass rounded-2xl p-4 border border-border/40 flex gap-2 items-center">
-                <Ticket className="w-5 h-5 text-muted-foreground shrink-0" />
-                <Input 
-                  placeholder="Tem um cupom?" 
-                  className="bg-transparent border-none focus-visible:ring-0 shadow-none px-2 uppercase" 
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  disabled={!!appliedCoupon}
-                />
-                {appliedCoupon ? (
-                  <Button variant="ghost" size="sm" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-red-500 hover:text-red-600 hover:bg-red-500/10">Remover</Button>
-                ) : (
-                  <Button variant="secondary" size="sm" onClick={handleApplyCoupon} disabled={!couponInput || loadingCoupon}>
-                    {loadingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aplicar"}
-                  </Button>
-                )}
+              <div className="space-y-1">
+                <div className="glass rounded-2xl p-4 border border-border/40 flex gap-2 items-center">
+                  <Ticket className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <Input 
+                    placeholder="Tem um cupom?" 
+                    className="bg-transparent border-none focus-visible:ring-0 shadow-none px-2 uppercase" 
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    disabled={!!appliedCoupon}
+                  />
+                  {appliedCoupon ? (
+                    <Button variant="ghost" size="sm" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-red-500 hover:text-red-600 hover:bg-red-500/10">Remover</Button>
+                  ) : (
+                    <Button variant="secondary" size="sm" onClick={handleApplyCoupon} disabled={!couponInput || loadingCoupon}>
+                      {loadingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aplicar"}
+                    </Button>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground px-2">
+                  * Cupons de desconto não são acumulativos com o desconto de 1ª compra (é um ou outro). O desconto de 5% no PIX se mantém sempre ativo.
+                </p>
               </div>
             </div>
           )}
@@ -346,9 +368,21 @@ function CarrinhoPage() {
               )}
             </div>
 
-            <div className="flex justify-between font-display text-xl pb-2">
-              <span>Total</span>
-              <span className="text-gradient-gold">R$ {total.toFixed(2)}</span>
+            <div className="space-y-2 border-b border-border/30 pb-3">
+              <div className="flex justify-between font-display text-[15px] text-muted-foreground">
+                <span>Total (Cartão)</span>
+                <span>R$ {total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center rounded-xl p-3 bg-emerald-500/10 border border-emerald-500/30">
+                <div>
+                  <span className="font-display text-sm text-emerald-600 dark:text-emerald-400 font-bold block">Total no PIX</span>
+                  <span className="text-[10px] text-muted-foreground">5% OFF mantido no PIX</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-display text-xl text-emerald-600 dark:text-emerald-400 font-bold">R$ {pixTotal.toFixed(2)}</span>
+                  <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Economize R$ {pixDiscount.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2.5">
@@ -391,7 +425,7 @@ function CarrinhoPage() {
         )}
       </div>
       <CustomerAuthModal open={showAuth} onOpenChange={setShowAuth} />
-      <ExitIntentPopup onApplyCoupon={(code) => setCouponCode(code)} />
+      <ExitIntentPopup onApplyCoupon={(code) => setCouponInput(code)} />
     </div>
   );
 }
