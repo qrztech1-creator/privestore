@@ -901,8 +901,8 @@ function ShopCard({ product, delay, isFavorite, onToggleFav, onOpen, user }: any
               maxQty: stock != null ? Number(stock) : 99,
             });
             toast.success("Adicionado ao carrinho");
-          }} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs tracking-wider uppercase">
-            <Plus className="w-3 h-3 mr-1" />{needsColor ? "Escolha cor" : needsSize ? "Escolha tamanho" : "Comprar"}
+          }} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] sm:text-xs font-semibold tracking-normal uppercase px-1.5 truncate shadow-sm">
+            <Plus className="w-3 h-3 mr-1 shrink-0 inline" />{needsColor ? "Escolher cor" : needsSize ? "Escolher tamanho" : "Comprar"}
           </Button>
         )}
       </div>

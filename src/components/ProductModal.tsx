@@ -61,14 +61,23 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
 
   const visibleImages = useMemo(() => {
     const list: { url: string }[] = [];
-    if (color) images.filter((i) => i.color_name === color).forEach((i) => list.push({ url: i.url }));
-    images.filter((i) => !i.color_name).forEach((i) => list.push({ url: i.url }));
-    if (product?.image_url && !list.some((i) => i.url === product.image_url)) {
-      list.unshift({ url: product.image_url });
+    // 1. Fotos vinculadas especificamente à cor selecionada
+    if (color) {
+      images.filter((i) => i.color_name === color).forEach((i) => list.push({ url: i.url }));
+      variants.filter((v) => v.color_name === color && v.image_url).forEach((v) => {
+        if (!list.some((i) => i.url === v.image_url)) list.push({ url: v.image_url });
+      });
     }
-    if (list.length === 0 && product?.image_url) list.push({ url: product.image_url });
+    // 2. Fotos gerais sem cor vinculada
+    images.filter((i) => !i.color_name).forEach((i) => {
+      if (!list.some((l) => l.url === i.url)) list.push({ url: i.url });
+    });
+    // 3. Fallback se não houver imagens cadastradas para a cor
+    if (list.length === 0 && product?.image_url) {
+      list.push({ url: product.image_url });
+    }
     return list;
-  }, [images, color, product?.image_url]);
+  }, [images, variants, color, product?.image_url]);
 
   const selectedVariant = variants.find(
     (v) => (!color || v.color_name === color) && (!sizesFromDb || !size || v.size === size)
@@ -374,10 +383,10 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                 e.preventDefault();
                 setFullscreenImageOpen(false);
               }}
-              className="absolute top-4 right-4 z-[100000] w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur transition border border-white/30 shadow-2xl cursor-pointer"
+              className="fixed top-4 right-4 z-[100005] w-11 h-11 shrink-0 min-w-11 min-h-11 aspect-square rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center backdrop-blur transition border border-white/40 shadow-2xl cursor-pointer"
               aria-label="Fechar Imagem Ampliada"
             >
-              <X className="w-7 h-7 text-white" />
+              <X className="w-6 h-6 text-white shrink-0" />
             </button>
 
             <div
