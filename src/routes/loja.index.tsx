@@ -330,7 +330,7 @@ function LojaPage() {
               </div>
             </div>
             <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-primary text-primary-foreground flex flex-col items-center justify-center text-center font-display shadow-xl rotate-12">
-              <span className="text-2xl leading-none">-15%</span>
+              <span className="text-2xl leading-none">-10%</span>
               <span className="text-[9px] uppercase tracking-widest mt-1">1ª compra</span>
             </div>
           </motion.div>
