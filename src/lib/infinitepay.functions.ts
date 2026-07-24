@@ -124,12 +124,24 @@ export const createInfinitepayCheckout = createServerFn({ method: "POST" })
     const handle = process.env.INFINITEPAY_HANDLE || "rayanne-emanuelly";
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order, error } = await supabaseAdmin
+    let isShopOrder = true;
+    let { data: order } = await supabaseAdmin
       .from("shop_orders")
       .select("id, total, guest_name, guest_email, guest_phone, address_line, address_city, address_state, address_zip, items:shop_order_items(product_name, qty, unit_price)")
       .eq("id", data.order_id)
-      .single();
-    if (error || !order) throw new Error("Pedido não encontrado");
+      .maybeSingle();
+
+    if (!order) {
+      isShopOrder = false;
+      const { data: brideOrder } = await supabaseAdmin
+        .from("orders")
+        .select("id, total, guest_name, guest_email, guest_phone, items:order_items(product_name, qty, unit_price)")
+        .eq("id", data.order_id)
+        .maybeSingle();
+      order = brideOrder;
+    }
+
+    if (!order) throw new Error("Pedido não encontrado");
 
     const targetTotalCents = Math.round(Number(order.total) * 100);
 
@@ -226,10 +238,17 @@ export const createInfinitepayCheckout = createServerFn({ method: "POST" })
       throw new Error("URL de checkout não retornada pela InfinitePay");
     }
 
-    await supabaseAdmin
-      .from("shop_orders")
-      .update({ payment_provider: "infinitepay", payment_session_id: json.slug || json.id || order.id })
-      .eq("id", order.id);
+    if (isShopOrder) {
+      await supabaseAdmin
+        .from("shop_orders")
+        .update({ payment_provider: "infinitepay", payment_session_id: json.slug || json.id || order.id })
+        .eq("id", order.id);
+    } else {
+      await supabaseAdmin
+        .from("orders")
+        .update({ payment_provider: "infinitepay" })
+        .eq("id", order.id);
+    }
 
     return { ok: true as const, url: checkoutUrl };
   });

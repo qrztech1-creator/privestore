@@ -11,9 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCart } from "@/lib/cart";
-import { Heart, Plus, Minus, ShoppingBag, Share2, MessageCircle, Lock, Trash } from "lucide-react";
+import { Heart, Plus, Minus, ShoppingBag, Share2, MessageCircle, Lock, Trash, CreditCard, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
+import { ProductModal } from "@/components/ProductModal";
+import { createInfinitepayCheckout } from "@/lib/infinitepay.functions";
 
 export const Route = createFileRoute("/n/$slug")({
   component: PublicBride,
@@ -62,6 +64,32 @@ function PublicBride() {
   const [loading, setLoading] = useState(true);
   const [accessOk, setAccessOk] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [modalProduct, setModalProduct] = useState<any | null>(null);
+
+  function handleModalAddToCart(itemPayload: any) {
+    if (!modalProduct || !event) return;
+    const eventProduct = items.find(
+      (it) => it.product_id === itemPayload.productId || it.product?.id === itemPayload.productId
+    );
+    if (!eventProduct) {
+      toast.error("Produto não encontrado na lista.");
+      return;
+    }
+    const remaining = (eventProduct.desired_qty || 0) - (eventProduct.purchased_qty || 0);
+
+    useCart.getState().add(event.id, {
+      eventProductId: eventProduct.id,
+      productId: itemPayload.productId,
+      name: itemPayload.name,
+      price: itemPayload.price,
+      imageUrl: itemPayload.imageUrl,
+      qty: itemPayload.qty || 1,
+      maxQty: Number.isFinite(remaining) ? Math.max(1, remaining) : 99,
+      variantId: itemPayload.variantId || null,
+      variantLabel: itemPayload.variantLabel || null,
+    });
+    toast.success("Presente adicionado ao carrinho 💝");
+  }
 
   useEffect(() => {
     (async () => {
@@ -183,11 +211,27 @@ function PublicBride() {
         </div>
         {items.length === 0 ? <p className="text-center text-muted-foreground">A lista será revelada em breve.</p> :
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {items.map((it, i) => <WishCard key={it.id} item={it} eventId={event.id} delay={i * 0.05} />)}
+            {items.map((it, i) => (
+              <WishCard
+                key={it.id}
+                item={it}
+                eventId={event.id}
+                delay={i * 0.05}
+                onOpenModal={(p: any) => setModalProduct(p)}
+              />
+            ))}
           </div>}
       </section>
 
       <CartDialog open={cartOpen} onOpenChange={setCartOpen} event={event} />
+
+      <ProductModal
+        product={modalProduct}
+        open={!!modalProduct}
+        onClose={() => setModalProduct(null)}
+        onAddToCart={handleModalAddToCart}
+        actionButtonText="Presentear Noiva"
+      />
 
       <footer className="border-t border-border/30 py-8 px-6 text-center text-xs text-muted-foreground">
         <Logo className="h-7 mx-auto mb-2 opacity-60" />
@@ -214,7 +258,7 @@ function CartFab({ eventId, onClick }: { eventId: string; onClick: () => void })
 }
 
 
-function WishCard({ item, eventId, delay }: any) {
+function WishCard({ item, eventId, delay, onOpenModal }: any) {
   const add = useCart((s) => s.add);
   const remaining = (item.desired_qty || 0) - (item.purchased_qty || 0);
   const giftSold = remaining <= 0;
@@ -265,16 +309,38 @@ function WishCard({ item, eventId, delay }: any) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay }}
-      className="glass rounded-2xl overflow-hidden hover-lift group"
+      className="glass rounded-2xl overflow-hidden hover-lift group flex flex-col justify-between"
     >
-      <div className="aspect-square bg-secondary overflow-hidden relative">
-        {visibleImage ? <img src={visibleImage} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />}
-        {sold && <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-          <span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass">{variantOutOfStock && !giftSold ? "Sem estoque" : "Presenteado"}</span>
-        </div>}
-      </div>
-      <div className="p-4 space-y-2">
-        <h3 className="font-medium truncate">{p.name}</h3>
+      <div>
+        <div
+          onClick={() => onOpenModal && onOpenModal(p)}
+          className="aspect-square bg-secondary overflow-hidden relative cursor-pointer group/img"
+        >
+          {visibleImage ? (
+            <img src={visibleImage} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover/img:scale-105 transition duration-700" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
+          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition flex items-center justify-center">
+            <span className="bg-background/90 backdrop-blur text-foreground text-xs px-3 py-1.5 rounded-full font-medium shadow-md flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5 text-primary" /> Ver detalhes
+            </span>
+          </div>
+          {sold && (
+            <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+              <span className="text-xs uppercase tracking-wider px-3 py-1 rounded-full glass font-semibold">
+                {variantOutOfStock && !giftSold ? "Sem estoque" : "Presenteado"}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="p-4 space-y-2">
+          <h3
+            onClick={() => onOpenModal && onOpenModal(p)}
+            className="font-medium truncate cursor-pointer hover:text-primary transition"
+          >
+            {p.name}
+          </h3>
         <div className="text-primary font-display text-xl">R$ {finalPrice.toFixed(2)}</div>
 
         {colors.length > 0 && (
@@ -344,6 +410,7 @@ function WishCard({ item, eventId, delay }: any) {
           {needsColor ? "Escolha uma cor" : needsSize ? "Escolha o tamanho" : "Presentear"}
         </Button>
       </div>
+    </div>
     </motion.div>
   );
 }
@@ -361,78 +428,169 @@ function CartDialog({ open, onOpenChange, event }: any) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function checkout(mode: "wa" | "register" | "card") {
+  async function checkout(mode: "card" | "wa" | "register") {
     if (items.length === 0) return;
-    if (!name) return toast.error("Informe seu nome");
+    if (!name.trim()) return toast.error("Por favor, preencha seu nome.");
+    if (!phone.trim()) return toast.error("Por favor, preencha seu WhatsApp / telefone.");
     setBusy(true);
-    const { data: order, error } = await supabase.from("orders").insert({
-      event_id: event.id, guest_name: name, guest_phone: phone || null, guest_email: email || null,
-      message: msg || null, total, status: "pending",
-    }).select().single();
-    if (error) { setBusy(false); return toast.error(error.message); }
-    await supabase.from("order_items").insert(items.map(i => ({
-      order_id: order.id, event_product_id: i.eventProductId, product_id: i.productId,
-      product_name: i.variantLabel ? `${i.name} — ${i.variantLabel}` : i.name,
-      qty: i.qty, unit_price: i.price,
-      variant_id: i.variantId || null, variant_label: i.variantLabel || null,
-    })));
 
-    if (mode === "card") {
-      const { data, error: fnErr } = await supabase.functions.invoke("create-checkout", {
-        body: { order_id: order.id, success_url: window.location.href + "?paid=1", cancel_url: window.location.href },
-      });
-      setBusy(false);
-      if (fnErr || !data?.url) return toast.error(fnErr?.message || "Falha ao iniciar pagamento");
+    try {
+      const provider = mode === "card" ? "infinitepay" : mode === "wa" ? "whatsapp" : "register";
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert({
+          event_id: event.id,
+          guest_name: name.trim(),
+          guest_phone: phone.trim() || null,
+          guest_email: email.trim() || null,
+          message: msg.trim() || null,
+          total,
+          status: "pending",
+          payment_provider: provider,
+        })
+        .select()
+        .single();
+
+      if (error || !order) throw new Error(error?.message || "Falha ao criar presente.");
+
+      const orderItems = items.map((i) => ({
+        order_id: order.id,
+        event_product_id: i.eventProductId,
+        product_id: i.productId,
+        product_name: i.variantLabel ? `${i.name} — ${i.variantLabel}` : i.name,
+        qty: i.qty,
+        unit_price: i.price,
+        variant_id: i.variantId || null,
+        variant_label: i.variantLabel || null,
+      }));
+
+      const { error: itemErr } = await supabase.from("order_items").insert(orderItems);
+      if (itemErr) console.warn("Erro ao salvar itens do presente:", itemErr);
+
+      if (mode === "card") {
+        const res = await createInfinitepayCheckout({
+          data: {
+            order_id: order.id,
+            success_url: `${window.location.origin}/n/${event.slug}?paid=1`,
+            cancel_url: window.location.href,
+          },
+        });
+
+        if (res.ok && res.url) {
+          clearCart(event.id);
+          setBusy(false);
+          toast.success("Redirecionando para o pagamento seguro...");
+          window.location.href = res.url;
+          return;
+        }
+        throw new Error(res.error || "Falha ao iniciar pagamento online");
+      }
+
       clearCart(event.id);
-      window.location.href = data.url;
-      return;
-    }
+      setBusy(false);
 
-    clearCart(event.id);
-    setBusy(false);
-    if (mode === "wa" && event.whatsapp_number) {
-      const text = `Oi! Acabei de fazer um pedido para ${event.bride_name}:\n\n${items.map(i => `• ${i.qty}x ${i.name}`).join("\n")}\n\nTotal: R$ ${total.toFixed(2)}\nMeu nome: ${name}`;
-      window.open(`https://wa.me/${event.whatsapp_number.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`, "_blank");
+      if (mode === "wa") {
+        const itemsSummary = items
+          .map((i) => `• ${i.qty}x ${i.name}${i.variantLabel ? ` (${i.variantLabel})` : ""} — R$ ${(i.price * i.qty).toFixed(2)}`)
+          .join("\n");
+        const orderCode = `#${order.id.slice(0, 8).toUpperCase()}`;
+
+        const waText = `🎁 *NOVO PRESENTE PARA A NOIVA — PRIVÊ*
+
+*Noiva:* ${event.bride_name}
+*Pedido:* ${orderCode}
+*Convidado(a):* ${name.trim()}
+*WhatsApp:* ${phone.trim()}
+${email ? `*E-mail:* ${email.trim()}\n` : ""}
+🛒 *ITENS PRESENTEDADOS:*
+${itemsSummary}
+
+💰 *VALOR TOTAL: R$ ${total.toFixed(2)}*
+${msg.trim() ? `\n💌 *Mensagem para a Noiva:* "${msg.trim()}"` : ""}
+
+Olá! Acabei de escolher um presente para ${event.bride_name} no site da Privê e gostaria de combinar o pagamento no WhatsApp! ✨`;
+
+        const targetPhone = (event.whatsapp_number || (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450").replace(/\D/g, "");
+        const waUrl = `https://wa.me/${targetPhone.startsWith("55") ? targetPhone : "55" + targetPhone}?text=${encodeURIComponent(waText)}`;
+
+        toast.success("Presente registrado! Redirecionando para o WhatsApp...");
+        window.open(waUrl, "_blank");
+      } else {
+        toast.success("Presente registrado com carinho! 💝");
+      }
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error("Erro ao registrar presente:", err);
+      setBusy(false);
+      toast.error(err.message || "Erro ao processar o presente.");
     }
-    toast.success("Pedido enviado ✨");
-    onOpenChange(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="font-display text-2xl">Carrinho</DialogTitle></DialogHeader>
-        {items.length === 0 ? <p className="text-center text-muted-foreground py-8">Vazio.</p> : (
+        <DialogHeader><DialogTitle className="font-display text-2xl">Carrinho de Presentes</DialogTitle></DialogHeader>
+        {items.length === 0 ? <p className="text-center text-muted-foreground py-8">Sua lista de presentes está vazia.</p> : (
           <>
             <div className="space-y-2 mb-4">
               {items.map(i => (
                 <div key={`${i.eventProductId}::${i.variantId || ""}`} className="flex items-center gap-2 glass rounded-lg p-2">
-                  {i.imageUrl && <img src={i.imageUrl} loading="lazy" className="w-12 h-12 rounded object-cover" alt="" />}
+                  {i.imageUrl && <img src={i.imageUrl} loading="lazy" className="w-12 h-12 rounded object-cover shrink-0" alt="" />}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate">{i.name}</div>
+                    <div className="text-sm font-medium truncate">{i.name}</div>
                     {i.variantLabel && <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{i.variantLabel}</div>}
-                    <div className="text-xs text-primary">R$ {i.price.toFixed(2)}</div>
+                    <div className="text-xs text-primary font-bold">R$ {i.price.toFixed(2)}</div>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(event.id, i.eventProductId, i.qty - 1, i.variantId)}><Minus className="w-3 h-3" /></Button>
-                    <span className="w-6 text-center text-sm">{i.qty}</span>
+                    <span className="w-6 text-center text-sm font-semibold">{i.qty}</span>
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setQty(event.id, i.eventProductId, i.qty + 1, i.variantId)}><Plus className="w-3 h-3" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeItem(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => removeItem(event.id, i.eventProductId, i.variantId)}><Trash className="w-3 h-3 text-red-400" /></Button>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex justify-between font-display text-xl mb-4"><span>Total</span><span className="text-gradient-gold">R$ {total.toFixed(2)}</span></div>
-            <div className="space-y-2">
-              <Input placeholder="Seu nome *" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input placeholder="WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Input placeholder="E-mail (opcional)" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <Textarea placeholder="Mensagem para a noiva (opcional)" value={msg} onChange={(e) => setMsg(e.target.value)} rows={2} />
+            <div className="flex justify-between font-display text-xl mb-4 border-t border-border/30 pt-3">
+              <span>Total dos presentes</span>
+              <span className="text-gradient-gold font-bold">R$ {total.toFixed(2)}</span>
             </div>
-            <div className="flex flex-col gap-2 mt-4">
-              <Button onClick={() => checkout("card")} disabled={busy} className="w-full bg-primary text-primary-foreground">💳 Pagar com cartão</Button>
-              {event.whatsapp_number && <Button onClick={() => checkout("wa")} disabled={busy} className="w-full bg-[#25D366] hover:bg-[#1faa55] text-white"><MessageCircle className="w-4 h-4 mr-1" />Combinar pelo WhatsApp</Button>}
-              <Button onClick={() => checkout("register")} disabled={busy} variant="outline" className="w-full">Apenas registrar presente</Button>
+            <div className="space-y-2.5">
+              <Input placeholder="Seu nome completo *" value={name} onChange={(e) => setName(e.target.value)} className="h-10 text-xs rounded-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Input placeholder="WhatsApp / Telefone *" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-10 text-xs rounded-xl" />
+                <Input placeholder="E-mail (opcional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 text-xs rounded-xl" />
+              </div>
+              <Textarea placeholder="Escreva uma mensagem carinhosa para a noiva (opcional) 💌" value={msg} onChange={(e) => setMsg(e.target.value)} rows={2} className="text-xs rounded-xl" />
+            </div>
+            <div className="flex flex-col gap-2.5 mt-5">
+              <Button
+                onClick={() => checkout("card")}
+                disabled={busy}
+                className="w-full py-3.5 font-medium shadow-md transition bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-glow"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {busy ? "Gerando Pagamento..." : "Pagar Online (Cartão ou PIX)"}
+              </Button>
+
+              <Button
+                onClick={() => checkout("wa")}
+                disabled={busy}
+                variant="outline"
+                className="w-full py-3.5 font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10 transition flex items-center justify-center gap-2"
+              >
+                <img src="/whatsapp-glyph.png" alt="" className="w-5 h-5 object-contain" />
+                Combinar no WhatsApp
+              </Button>
+
+              <Button
+                onClick={() => checkout("register")}
+                disabled={busy}
+                variant="ghost"
+                className="w-full text-xs text-muted-foreground hover:text-foreground"
+              >
+                Apenas registrar presente (Sem pagamento imediato)
+              </Button>
             </div>
           </>
         )}

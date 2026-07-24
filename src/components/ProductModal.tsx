@@ -12,12 +12,23 @@ interface Props {
   product: any | null;
   open: boolean;
   onClose: () => void;
-  isFavorite: boolean;
-  onToggleFav: () => void;
-  user: any;
+  isFavorite?: boolean;
+  onToggleFav?: () => void;
+  user?: any;
+  onAddToCart?: (item: {
+    productId: string;
+    variantId?: string | null;
+    name: string;
+    variantLabel?: string | null;
+    price: number;
+    imageUrl?: string;
+    qty: number;
+    maxQty?: number;
+  }) => void;
+  actionButtonText?: string;
 }
 
-export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, user }: Props) {
+export function ProductModal({ product, open, onClose, isFavorite = false, onToggleFav, user, onAddToCart, actionButtonText }: Props) {
   const add = useShopCart((s) => s.add);
   const variants: any[] = product?.variants || [];
   const images: any[] = product?.images || [];
@@ -322,7 +333,7 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                       disabled={needsColor || needsSize}
                       onClick={() => {
                         const label = [color, size].filter(Boolean).join(" · ") || null;
-                        add({
+                        const payload = {
                           productId: product.id,
                           variantId: selectedVariant?.id || null,
                           name: product.name,
@@ -331,22 +342,30 @@ export function ProductModal({ product, open, onClose, isFavorite, onToggleFav, 
                           imageUrl: mainImg,
                           qty: 1,
                           maxQty: stock != null ? Number(stock) : 99,
-                        });
+                        };
+                        if (onAddToCart) {
+                          onAddToCart(payload);
+                        } else {
+                          add(payload);
+                        }
                         toast.success("Adicionado ao carrinho");
+                        onClose();
                       }}
                       className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-primary-foreground tracking-wider uppercase text-xs font-bold shadow-md"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      {needsColor ? "Escolha uma cor" : needsSize ? "Escolha o tamanho" : "Adicionar ao carrinho"}
+                      {needsColor ? "Escolha uma cor" : needsSize ? "Escolha o tamanho" : (actionButtonText || "Adicionar ao carrinho")}
                     </Button>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" onClick={onToggleFav} className="h-10 sm:h-11 text-xs">
-                        <Heart className={`w-3.5 h-3.5 mr-1.5 ${isFavorite ? "fill-primary text-primary" : ""}`} />
-                        {isFavorite ? "Favorito" : "Favoritar"}
-                      </Button>
+                      {onToggleFav && (
+                        <Button variant="outline" onClick={onToggleFav} className="h-10 sm:h-11 text-xs">
+                          <Heart className={`w-3.5 h-3.5 mr-1.5 ${isFavorite ? "fill-primary text-primary" : ""}`} />
+                          {isFavorite ? "Favorito" : "Favoritar"}
+                        </Button>
+                      )}
                       <a
                         href="/loja/carrinho"
-                        className="inline-flex items-center justify-center h-10 sm:h-11 rounded-md border border-border hover:border-primary/50 text-xs font-medium uppercase tracking-wider transition"
+                        className={`inline-flex items-center justify-center h-10 sm:h-11 rounded-md border border-border hover:border-primary/50 text-xs font-medium uppercase tracking-wider transition ${!onToggleFav ? "col-span-2" : ""}`}
                       >
                         <ShoppingBag className="w-3.5 h-3.5 mr-1.5" /> Ver carrinho
                       </a>
