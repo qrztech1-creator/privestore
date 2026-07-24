@@ -272,6 +272,93 @@ function CarrinhoPage() {
     }
   }
 
+  async function checkoutWhatsApp() {
+    if (items.length === 0) return;
+    if (!name || !email) return toast.error("Preencha seu nome e e-mail para prosseguir.");
+    if (!phone) return toast.error("Preencha seu WhatsApp/Telefone para prosseguir.");
+    if (!street || !city || !state || !zip) return toast.error("Preencha o CEP e o endereço de entrega completo.");
+    setBusy(true);
+
+    try {
+      if (user) {
+        supabase.auth.updateUser({
+          data: { full_name: name, phone, zip, street, number, complement, neighborhood, city, state },
+        }).catch((e) => console.warn("Erro ao salvar metadata:", e));
+
+        supabase.from("profiles").update({ full_name: name, phone }).eq("id", user.id).catch((e) => console.warn("Erro ao salvar profile:", e));
+      }
+
+      const structuredAddressLine = `${street} | ${number || "S/N"} | ${complement || ""} | ${neighborhood || ""}`;
+
+      const order = await createShopOrderServerFn({
+        data: {
+          customer_id: user?.id || null,
+          guest_name: name,
+          guest_email: email,
+          guest_phone: phone || null,
+          address_line: structuredAddressLine,
+          address_city: city || null,
+          address_state: state || null,
+          address_zip: zip || null,
+          message: msg || null,
+          total,
+          payment_provider: "whatsapp",
+          items: items.map((i) => ({
+            productId: i.productId,
+            variantId: i.variantId || null,
+            name: i.name,
+            variantLabel: i.variantLabel || null,
+            qty: i.qty,
+            price: i.price,
+          })),
+        },
+      });
+
+      clear();
+      setBusy(false);
+
+      const itemsSummary = items
+        .map((i) => `• ${i.qty}x ${i.name}${i.variantLabel ? ` (${i.variantLabel})` : ""} — R$ ${(i.price * i.qty).toFixed(2)}`)
+        .join("\n");
+
+      const orderCode = order?.id ? `#${order.id.slice(0, 8).toUpperCase()}` : "";
+
+      const waText = `🛍️ *NOVO PEDIDO PRIVÊ — COMBINAR VIA WHATSAPP*
+
+*Pedido:* ${orderCode}
+*Cliente:* ${name}
+*WhatsApp:* ${phone}
+*E-mail:* ${email}
+
+📦 *ENDEREÇO DE ENTREGA:*
+${street}, Nº ${number || "S/N"}${complement ? ` (${complement})` : ""}
+Bairro: ${neighborhood || "N/I"}
+Cidade: ${city}/${state.toUpperCase()} — CEP: ${zip}
+
+🛒 *ITENS DO PEDIDO:*
+${itemsSummary}
+
+💰 *RESUMO DO PEDIDO:*
+Subtotal: R$ ${subtotal.toFixed(2)}
+${activeDiscount > 0 ? `Desconto: -R$ ${activeDiscount.toFixed(2)}\n` : ""}Frete: ${isFreeShipping ? "GRÁTIS" : `R$ ${shippingCost.toFixed(2)}`}
+*TOTAL A PAGAR: R$ ${total.toFixed(2)}*
+${pixDiscount > 0 ? `*(No PIX 5% OFF: R$ ${pixTotal.toFixed(2)})*\n` : ""}${msg ? `\n📝 *Observações:* ${msg}` : ""}
+
+Olá! Fiz meu pedido no site da Privê e gostaria de combinar o pagamento e o envio com você! ✨`;
+
+      const storePhoneClean = ((import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450").replace(/\D/g, "");
+      const waUrl = `https://wa.me/${storePhoneClean.startsWith("55") ? storePhoneClean : "55" + storePhoneClean}?text=${encodeURIComponent(waText)}`;
+
+      toast.success("Pedido registrado com sucesso! Redirecionando para o WhatsApp...");
+      window.open(waUrl, "_blank");
+      navigate({ to: "/loja" });
+    } catch (err: any) {
+      console.error("Erro ao registrar pedido via WhatsApp:", err);
+      setBusy(false);
+      toast.error(err.message || "Erro ao registrar o pedido.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 glass border-b border-border/30 backdrop-blur">
@@ -486,17 +573,33 @@ function CarrinhoPage() {
               <Textarea placeholder="Observações do pedido (opcional)" rows={2} value={msg} onChange={(e) => setMsg(e.target.value)} className="text-xs rounded-xl" />
             </div>
 
-            <div className="pt-3 border-t border-border/30 space-y-2">
+            <div className="pt-3 border-t border-border/30 space-y-2.5">
               <Button
                 disabled={busy}
                 onClick={checkout}
                 className="w-full py-3.5 font-medium shadow-md transition bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-glow"
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                {busy ? "Gerando Pagamento..." : "Finalizar Compra (Cartão ou PIX)"}
+                {busy ? "Gerando Pagamento..." : "Pagar Online (Cartão ou PIX)"}
               </Button>
-              <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
-                🔒 Pagamento instantâneo e seguro via InfinitePay.
+
+              <div className="relative text-center my-1">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/30" /></div>
+                <span className="relative bg-background px-2 text-[10px] uppercase text-muted-foreground tracking-wider font-semibold">ou prefere combinar?</span>
+              </div>
+
+              <Button
+                disabled={busy}
+                variant="outline"
+                onClick={checkoutWhatsApp}
+                className="w-full py-3.5 font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10 transition flex items-center justify-center gap-2"
+              >
+                <img src="/whatsapp-glyph.png" alt="" className="w-5 h-5 object-contain" />
+                Combinar no WhatsApp
+              </Button>
+
+              <p className="text-[11px] text-center text-muted-foreground leading-relaxed pt-1">
+                🔒 Pagamento direto no site ou atendimento personalizado no WhatsApp.
               </p>
             </div>
           </aside>

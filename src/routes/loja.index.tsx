@@ -777,10 +777,14 @@ function LojaPage() {
         target="_blank"
         rel="noreferrer"
         aria-label="Falar no WhatsApp"
-        className="fixed bottom-5 right-5 z-50 h-14 w-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-2xl hover:scale-110 transition"
+        className="fixed bottom-5 right-5 z-50 h-14 w-14 flex items-center justify-center hover:scale-110 transition"
       >
-        <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30" />
-        <MessageCircle className="w-6 h-6 relative" />
+        <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-35" />
+        <img
+          src="/whatsapp-glyph.png"
+          alt="WhatsApp"
+          className="w-14 h-14 object-contain relative drop-shadow-lg"
+        />
       </a>
 
       <ProductModal

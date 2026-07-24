@@ -34,6 +34,7 @@ function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const [period, setPeriod] = useState("all");
   const [open, setOpen] = useState<string | null>(null);
 
@@ -59,13 +60,17 @@ function AdminOrders() {
     return orders.filter((o) => {
       if (cutoff && new Date(o.created_at).getTime() < cutoff) return false;
       if (status !== "all" && o.status !== status) return false;
+      if (paymentFilter !== "all") {
+        if (paymentFilter === "whatsapp" && o.payment_provider !== "whatsapp") return false;
+        if (paymentFilter === "online" && o.payment_provider === "whatsapp") return false;
+      }
       if (q) {
         const hay = `${o.guest_name || ""} ${o.guest_email || ""} ${o.event?.bride_name || ""}`.toLowerCase();
         if (!hay.includes(q.toLowerCase())) return false;
       }
       return true;
     });
-  }, [orders, q, status, period]);
+  }, [orders, q, status, paymentFilter, period]);
 
   const total = filtered.reduce((s, o) => s + Number(o.total), 0);
 
@@ -131,6 +136,16 @@ function AdminOrders() {
               <SelectItem value="cancelled">Cancelado</SelectItem>
             </SelectContent>
           </Select>
+          {kind === "shop" && (
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger className="w-[170px]"><SelectValue placeholder="Forma de Pgto" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos pagamentos</SelectItem>
+                <SelectItem value="online">💳 InfinitePay (Online)</SelectItem>
+                <SelectItem value="whatsapp">💬 Combinar WhatsApp</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -145,15 +160,23 @@ function AdminOrders() {
         <div className="space-y-2">
           {filtered.map((o) => {
             const isOpen = open === o.id;
+            const isWa = o.payment_provider === "whatsapp";
             const sublabel = kind === "bride"
               ? `→ ${o.event?.bride_name || ""}`
-              : `· ${o.payment_provider === "pix" ? "PIX" : o.payment_provider === "card" ? "Cartão" : "WhatsApp"}`;
+              : isWa
+              ? "💬 Combinar no WhatsApp"
+              : `💳 ${o.payment_provider === "pix" ? "PIX" : "InfinitePay"}`;
             return (
               <div key={o.id} className="glass rounded-xl">
                 <div className="p-4 flex items-center gap-3 cursor-pointer" onClick={() => setOpen(isOpen ? null : o.id)}>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{o.guest_name} <span className="text-muted-foreground text-xs">{sublabel}</span></div>
-                    <div className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")} · {o.guest_phone || o.guest_email || "—"}</div>
+                    <div className="font-medium truncate flex items-center gap-2">
+                      <span>{o.guest_name}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${isWa ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-primary/10 text-primary border border-primary/20"}`}>
+                        {sublabel}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{new Date(o.created_at).toLocaleString("pt-BR")} · {o.guest_phone || o.guest_email || "—"}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-primary font-display text-lg">R$ {Number(o.total).toFixed(2)}</div>
