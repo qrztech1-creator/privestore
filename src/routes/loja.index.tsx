@@ -34,7 +34,7 @@ export const Route = createFileRoute("/loja/")({
       { property: "og:description", content: "Lingerie exclusiva, envio Brasil, PIX 5% OFF." },
       { property: "og:image", content: "https://prive.qrztech.com/og-image.jpg" },
       { property: "og:image:secure_url", content: "https://prive.qrztech.com/og-image.jpg" },
-      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:type", content: "image/png" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { name: "twitter:image", content: "https://prive.qrztech.com/og-image.jpg" },

@@ -29,7 +29,7 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: "Plataforma boutique para casamento, chá de lingerie e despedida de solteira. Páginas personalizadas, lista de presentes, experiência premium." },
       { property: "og:image", content: "https://prive.qrztech.com/og-image.jpg" },
       { property: "og:image:secure_url", content: "https://prive.qrztech.com/og-image.jpg" },
-      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:type", content: "image/png" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { name: "twitter:image", content: "https://prive.qrztech.com/og-image.jpg" },
