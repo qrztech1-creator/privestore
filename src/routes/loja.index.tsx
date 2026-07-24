@@ -32,6 +32,13 @@ export const Route = createFileRoute("/loja/")({
       { name: "description", content: "Coleções autorais em renda, seda e cetim. Peças íntimas com envio para todo o Brasil. PIX com desconto." },
       { property: "og:title", content: "Privê — Lingerie de autor" },
       { property: "og:description", content: "Lingerie exclusiva, envio Brasil, PIX 5% OFF." },
+      { property: "og:image", content: "https://prive.qrztech.com/og-image.jpg" },
+      { property: "og:image:secure_url", content: "https://prive.qrztech.com/og-image.jpg" },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:image", content: "https://prive.qrztech.com/og-image.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   errorComponent: ({ error, reset }) => (

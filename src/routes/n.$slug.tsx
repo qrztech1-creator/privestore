@@ -41,6 +41,13 @@ export const Route = createFileRoute("/n/$slug")({
       { name: "description", content: "Presenteie com carinho. Lista de presentes exclusiva no Privê." },
       { property: "og:title", content: `Lista de presentes · Privê` },
       { property: "og:description", content: "Presenteie com carinho." },
+      { property: "og:image", content: "https://prive.qrztech.com/og-image.jpg" },
+      { property: "og:image:secure_url", content: "https://prive.qrztech.com/og-image.jpg" },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:image", content: "https://prive.qrztech.com/og-image.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
 });
