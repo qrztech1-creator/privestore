@@ -564,32 +564,13 @@ Olá! Acabei de escolher um presente para ${event.bride_name} no site da Privê 
             </div>
             <div className="flex flex-col gap-2.5 mt-5">
               <Button
-                onClick={() => checkout("card")}
-                disabled={busy}
-                className="w-full py-3.5 font-medium shadow-md transition bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-glow"
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {busy ? "Gerando Pagamento..." : "Pagar Online (Cartão ou PIX)"}
-              </Button>
-
-              <Button
                 onClick={() => checkout("wa")}
                 disabled={busy}
-                variant="outline"
-                className="w-full py-3.5 font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10 transition flex items-center justify-center gap-2"
+                className="w-full py-4 font-semibold text-base shadow-md transition bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2.5 rounded-xl"
               >
-                <img src="/whatsapp-glyph.png" alt="" className="w-5 h-5 object-contain" />
-                Combinar no WhatsApp
-              </Button>
-
-              <Button
-                onClick={() => checkout("register")}
-                disabled={busy}
-                variant="ghost"
-                className="w-full text-xs text-muted-foreground hover:text-foreground"
-              >
-                Apenas registrar presente (Sem pagamento imediato)
+                <img src="/whatsapp-glyph.png" alt="" className="w-5 h-5 object-contain brightness-0 invert" />
+                {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {busy ? "Registrando presente..." : "Finalizar presente pelo WhatsApp"}
               </Button>
             </div>
           </>

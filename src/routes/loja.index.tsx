@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DEFAULT_SIZES } from "@/lib/variantDefaults";
 import { ProductModal } from "@/components/ProductModal";
 import { CustomerAuthModal } from "@/components/CustomerAuthModal";
-import { ExitIntentPopup } from "@/components/ExitIntentPopup";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const STORE_WHATSAPP = (import.meta.env.VITE_STORE_WHATSAPP as string) || "5527992042450";
@@ -29,9 +29,9 @@ export const Route = createFileRoute("/loja/")({
   head: () => ({
     meta: [
       { title: "Privê — Lingerie de autor, feita para você" },
-      { name: "description", content: "Coleções autorais em renda, seda e cetim. Peças íntimas com envio para todo o Brasil. PIX com desconto." },
+      { name: "description", content: "Coleções autorais em renda, seda e cetim. Peças íntimas com envio para todo o Brasil. Atendimento exclusivo via WhatsApp." },
       { property: "og:title", content: "Privê — Lingerie de autor" },
-      { property: "og:description", content: "Lingerie exclusiva, envio Brasil, PIX 5% OFF." },
+      { property: "og:description", content: "Lingerie exclusiva, envio Brasil, atendimento via WhatsApp." },
       { property: "og:image", content: "https://prive.qrztech.com/og-image.jpg" },
       { property: "og:image:secure_url", content: "https://prive.qrztech.com/og-image.jpg" },
       { property: "og:image:type", content: "image/png" },
@@ -336,7 +336,7 @@ function LojaPage() {
             </span>,
             <span key={`sep1-${loopIdx}`} className="opacity-40">·</span>,
             <span key={`b-${loopIdx}`} className="inline-flex items-center gap-2">
-              ⚡ PIX COM 5% OFF
+              ✨ EXCLUSIVIDADE & ATENDIMENTO PERSONALIZADO
             </span>,
             <span key={`sep2-${loopIdx}`} className="opacity-40">·</span>,
             <span key={`c-${loopIdx}`} className="inline-flex items-center gap-2">
@@ -519,8 +519,8 @@ function LojaPage() {
               </div>
             </div>
             <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-primary text-primary-foreground flex flex-col items-center justify-center text-center font-display shadow-xl rotate-12">
-              <span className="text-2xl leading-none">-10%</span>
-              <span className="text-[9px] uppercase tracking-widest mt-1">1ª compra</span>
+              <Sparkles className="w-6 h-6 mb-1" />
+              <span className="text-[10px] uppercase tracking-widest font-semibold">Exclusivo</span>
             </div>
           </motion.div>
         </div>
@@ -531,7 +531,7 @@ function LojaPage() {
         <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
           {[
             { Icon: Truck, t: "Envio Direto com Rastreio", s: "Para todo Brasil" },
-            { Icon: ShieldCheck, t: "Pagamento seguro", s: "PIX, cartão ou WhatsApp" },
+            { Icon: ShieldCheck, t: "Atendimento exclusivo", s: "Direto no WhatsApp" },
             { Icon: RefreshCw, t: "Troca fácil", s: "Até 7 dias" },
             { Icon: Sparkles, t: "Peças autorais", s: "Produção limitada" },
           ].map(({ Icon, t, s }) => (
@@ -801,7 +801,6 @@ function LojaPage() {
         onOpenChange={setShowAuthModal}
       />
 
-      <ExitIntentPopup />
     </div>
   );
 }
